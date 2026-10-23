@@ -209,3 +209,24 @@ balanced mixed rounds, deterministic seeded shuffling with no immediate repeats,
 release gating, full-round completion and restart. The notation geometry was
 also visually inspected with the bundled Leland music font; desktop GUI and
 physical MIDI verification remain pending.
+
+## Staff size
+
+Use the **− / Staff 100% / +** control beside the note-display/practice controls
+when either is enabled. Each click changes the notation size by 25 percentage
+points, from 50% to 250%. It scales staff spacing, notes, stems, clefs, sharps and
+ledger lines together, for both live notation and note practice. Changing size
+does not restart an exercise. Size is retained while switching these views in
+the same Free Play session; a new session starts at 100%.
+
+The panel grows to use available vertical space without covering the keyboard
+or chord display. If the requested size does not fit, it uses the largest size
+that fits and states the effective percentage in its heading. Enlarge/maximize
+the window for more room. Fewer simultaneous notes are drawn when zoomed in;
+all sounding note names remain in the footer. Heading/feedback font growth is
+limited independently to preserve readability.
+
+Desktop check: try 100%, 150%, and 250% in live Notes and Note practice; verify
+that staff spacing and symbols enlarge together, notes stay on their correct
+lines, and progress survives size changes. Resize the window at high zoom and
+check the fitted-size indication and that notes stay above the keyboard.

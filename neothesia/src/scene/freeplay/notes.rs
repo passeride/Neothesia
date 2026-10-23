@@ -19,6 +19,7 @@ pub(super) struct NotePractice {
     range: PracticeRange,
     chromatic: bool,
     hint: bool,
+    zoom_percent: u16,
 }
 impl Default for NotePractice {
     fn default() -> Self {
@@ -28,6 +29,7 @@ impl Default for NotePractice {
             range: PracticeRange::Both,
             chromatic: false,
             hint: false,
+            zoom_percent: 100,
         }
     }
 }
@@ -79,7 +81,9 @@ impl FreeplayScene {
     pub(super) fn note_controls_bottom(&self, ctx: &Context) -> f32 {
         let base = if self.preview.is_some() { 125.0 } else { 80.0 };
         let last = if self.note_practice.session.is_some() {
-            5
+            6
+        } else if self.note_practice.show_notes {
+            2
         } else {
             1
         };
@@ -123,6 +127,40 @@ impl FreeplayScene {
                 self.note_practice.session = None;
             } else {
                 self.restart_note_training();
+            }
+        }
+        if self.note_practice.show_notes || self.note_practice.session.is_some() {
+            let index = if self.note_practice.session.is_some() {
+                6
+            } else {
+                2
+            };
+            let (x, y) = control_pos(width, index, base);
+            if nuon::button()
+                .id("staff_zoom_out")
+                .pos(x, y)
+                .size(30.0, 30.0)
+                .label("-")
+                .border_radius([5.0; 4])
+                .build(&mut self.nuon)
+            {
+                self.note_practice.zoom_percent =
+                    self.note_practice.zoom_percent.saturating_sub(25).max(50);
+            }
+            nuon::label()
+                .pos(x + 30.0, y)
+                .size(70.0, 30.0)
+                .text(format!("Staff {}%", self.note_practice.zoom_percent))
+                .build(&mut self.nuon);
+            if nuon::button()
+                .id("staff_zoom_in")
+                .pos(x + 100.0, y)
+                .size(30.0, 30.0)
+                .label("+")
+                .border_radius([5.0; 4])
+                .build(&mut self.nuon)
+            {
+                self.note_practice.zoom_percent = (self.note_practice.zoom_percent + 25).min(250);
             }
         }
         if self.note_practice.session.is_none() {
@@ -197,13 +235,16 @@ impl FreeplayScene {
                 .build(&mut self.nuon);
             return;
         }
-        let scale = (available / 280.0).min(1.0);
+        let requested_scale = f32::from(practice.zoom_percent) / 100.0;
+        let scale = (available / 280.0).min(requested_scale);
+        // Enlarge notation without letting headings/feedback overwhelm the staff.
+        let text_scale = scale.min(1.25);
         let target = practice.session.as_ref().and_then(|s| s.target());
         let correct = practice
             .session
             .as_ref()
             .is_some_and(|s| s.phase() == Phase::Correct);
-        let heading = if let Some(s) = &practice.session {
+        let mut heading = if let Some(s) = &practice.session {
             if let Some(t) = target {
                 format!(
                     "Note {} / {} - {}",
@@ -220,6 +261,13 @@ impl FreeplayScene {
         } else {
             "Live notes - treble (G) and bass (F)".to_owned()
         };
+        if scale + 0.01 < requested_scale {
+            heading.push_str(&format!(
+                " (fitted to {:.0}%; enlarge window for {}%)",
+                scale * 100.0,
+                practice.zoom_percent
+            ));
+        }
         let status = if let Some(s) = &practice.session {
             match s.phase() {
                 Phase::ReleaseBeforeStart => "Release keys and sustain pedal to begin.".to_owned(),
@@ -256,7 +304,7 @@ impl FreeplayScene {
             top + 3.0 * scale,
             width - 10.0,
             22.0 * scale,
-            17.0 * scale,
+            17.0 * text_scale,
             heading,
         );
         label(
@@ -265,7 +313,7 @@ impl FreeplayScene {
             top + 26.0 * scale,
             width - 10.0,
             22.0 * scale,
-            14.0 * scale,
+            14.0 * text_scale,
             status,
         );
 
@@ -315,7 +363,9 @@ impl FreeplayScene {
             }
         }
         let live = self.live_notes.notes();
-        let max_notes = (((width - 180.0) / 28.0).floor().max(1.0) as usize).min(12);
+        // Account for enlarged noteheads, accidentals and spacing at higher zoom.
+        let max_notes =
+            ((((width - 30.0) / scale - 163.0) / 28.0).floor().max(0.0) as usize).min(12);
         let displayable: Vec<_> = live
             .iter()
             .copied()
@@ -362,7 +412,7 @@ impl FreeplayScene {
             top + 254.0 * scale,
             width - 10.0,
             23.0 * scale,
-            13.0 * scale,
+            13.0 * text_scale,
             footer,
         );
     }

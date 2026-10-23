@@ -8,6 +8,17 @@ on:
   workflow_dispatch:
 
 jobs:
+  chord_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Test chord recognition and live MIDI note state
+        shell: bash
+        run: |
+          rustc --edition=2024 --test neothesia-core/src/chords/mod.rs -o /tmp/chord-tests
+          /tmp/chord-tests
+
   lints:
     runs-on: ubuntu-latest
     steps:

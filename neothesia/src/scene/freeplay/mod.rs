@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use midi_file::midly::MidiMessage;
+use neothesia_core::chords::{self, RecognitionOptions, live::LiveNotes};
 use neothesia_core::render::{GlowRenderer, GuidelineRenderer, QuadRenderer, TextRenderer};
 use winit::{
     event::WindowEvent,
@@ -51,7 +52,9 @@ pub struct FreeplayScene {
     nuon_renderer: NuonRenderer,
     nuon: nuon::Ui,
     mouse_to_midi_state: MouseToMidiEventState,
-    deduced_chord_name: String,
+    show_chords: bool,
+    live_notes: LiveNotes,
+    chord_text: String,
 
     recorder: FreeplayRecorder,
     recorder_status: RecorderStatus,
@@ -98,7 +101,9 @@ impl FreeplayScene {
             nuon_renderer: NuonRenderer::new(ctx),
             nuon: nuon::Ui::new(),
             mouse_to_midi_state: MouseToMidiEventState::default(),
-            deduced_chord_name: String::new(),
+            show_chords: false,
+            live_notes: LiveNotes::default(),
+            chord_text: String::new(),
             recorder: FreeplayRecorder::default(),
             recorder_status: RecorderStatus::default(),
             preview: None,
@@ -141,13 +146,74 @@ impl FreeplayScene {
     fn update_ui(&mut self, ctx: &mut Context) {
         recorder::update_preview_ui(self, ctx);
 
+        if nuon::button()
+            .id("freeplay_show_chords")
+            .pos(10.0, if self.preview.is_some() { 85.0 } else { 40.0 })
+            .size(130.0, 30.0)
+            .label(if self.show_chords {
+                "Chords: On"
+            } else {
+                "Chords: Off"
+            })
+            .color(if self.show_chords {
+                [45, 95, 145, 255]
+            } else {
+                [37, 35, 42, 255]
+            })
+            .border_radius([5.0; 4])
+            .build(&mut self.nuon)
+        {
+            self.show_chords = !self.show_chords;
+            self.update_chord_text();
+        }
+        if !self.show_chords {
+            return;
+        }
+
         nuon::label()
-            .text(&self.deduced_chord_name)
-            .font_size(25.0)
-            .y(self.keyboard.pos().y - 25.0 - 10.0)
-            .height(25.0)
+            .text(&self.chord_text)
+            .font_size(22.0)
+            .y(self.keyboard.pos().y - 80.0)
+            .height(70.0)
+            .text_justify(nuon::TextAlign::Center)
             .width(ctx.window_state.logical_size.width)
             .build(&mut self.nuon);
+    }
+
+    fn update_chord_text(&mut self) {
+        if !self.show_chords {
+            return;
+        }
+        let options = RecognitionOptions::default();
+        let analysis = chords::recognize(&self.live_notes.notes(), options);
+        self.chord_text = if analysis.notes.is_empty() {
+            "Play a chord".to_owned()
+        } else if analysis.pitch_classes.len() == 1 {
+            format!(
+                "Note: {}",
+                chords::note_name(analysis.pitch_classes[0], options.spelling)
+            )
+        } else if let Some(best) = analysis.candidates.first() {
+            let alternatives: Vec<_> = analysis
+                .candidates
+                .iter()
+                .skip(1)
+                .take(2)
+                .map(|c| c.symbol.as_str())
+                .collect();
+            if alternatives.is_empty() {
+                best.symbol.clone()
+            } else {
+                format!("{}\nAlso: {}", best.symbol, alternatives.join(" | "))
+            }
+        } else {
+            let names: Vec<_> = analysis
+                .pitch_classes
+                .iter()
+                .map(|n| chords::note_name(*n, options.spelling))
+                .collect();
+            format!("No chord match: {}", names.join(" "))
+        };
     }
 
     fn resize(&mut self, ctx: &mut Context) {
@@ -263,150 +329,17 @@ impl Scene for FreeplayScene {
             .connection()
             .midi_event(channel.into(), *message);
 
-        if let MidiMessage::NoteOn { .. } = message {
-            let start = self.keyboard.layout().range.start();
-
-            let notes: Vec<u8> = self
-                .keyboard
-                .key_states()
-                .iter()
-                .enumerate()
-                .filter(|(_, state)| state.pressed_by_user().is_some())
-                .map(|(id, _)| id as u8 + start)
-                .collect();
-
-            self.deduced_chord_name = chords::deduce_name(&notes).unwrap_or_default();
-        }
-    }
-}
-
-pub(crate) mod chords {
-    /// Get chord name based on notes, eg. Cmaj7
-    pub fn deduce_name(midi_notes: &[u8]) -> Option<String> {
-        if midi_notes.is_empty() {
-            return None;
-        }
-
-        if midi_notes.len() == 1 {
-            return Some(note_name(midi_notes[0]).to_string());
-        }
-
-        // Normalize notes to a single octave and sort
-        let mut normalized: Vec<u8> = midi_notes.iter().map(|&n| n % 12).collect();
-        normalized.sort_unstable();
-        normalized.dedup();
-
-        if normalized.is_empty() {
-            return None;
-        }
-
-        // Try each note as potential root
-        for i in 0..normalized.len() {
-            let root = normalized[i];
-            let intervals = get_intervals(&normalized, root);
-
-            if let Some(chord_type) = match_chord_type(intervals) {
-                return Some(format!("{}{}", note_name(root), chord_type));
+        match *message {
+            MidiMessage::NoteOn { key, vel } => {
+                self.live_notes.note_on(channel, key.as_int(), vel.as_int())
             }
+            MidiMessage::NoteOff { key, .. } => self.live_notes.note_off(channel, key.as_int()),
+            MidiMessage::Controller { controller, value } => {
+                self.live_notes
+                    .controller(channel, controller.as_int(), value.as_int())
+            }
+            _ => return,
         }
-
-        None
-    }
-
-    // TODO: This is clunky, we should change names based on the scale in use
-    fn note_name(midi: u8) -> &'static str {
-        const NAMES: [&str; 12] = [
-            "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B",
-        ];
-        NAMES[(midi % 12) as usize]
-    }
-
-    fn get_intervals(notes: &[u8], root: u8) -> Vec<u8> {
-        notes
-            .iter()
-            .map(|&n| (n + 12 - root) % 12)
-            .filter(|&i| i != 0)
-            .collect()
-    }
-
-    fn match_chord_type(mut intervals: Vec<u8>) -> Option<&'static str> {
-        intervals.sort_unstable();
-
-        match intervals.as_slice() {
-            // Triads
-            [3, 7] => Some("m"),   // minor
-            [4, 7] => Some("M"),   // major
-            [3, 6] => Some("dim"), // diminished
-            [4, 8] => Some("aug"), // augmented
-
-            // Seventh chords
-            [3, 7, 10] => Some("m7"),      // minor 7th
-            [4, 7, 11] => Some("maj7"),    // major 7th
-            [4, 7, 10] => Some("7"),       // dominant 7th
-            [3, 6, 9] => Some("dim7"),     // diminished 7th
-            [3, 6, 10] => Some("m7b5"),    // half-diminished
-            [4, 8, 10] => Some("aug7"),    // augmented 7th
-            [4, 8, 11] => Some("augmaj7"), // augmented major 7th
-            [3, 7, 11] => Some("mmaj7"),   // minor major 7th
-
-            // Sixth chords
-            [4, 7, 9] => Some("6"),  // major 6th
-            [3, 7, 9] => Some("m6"), // minor 6th
-
-            // Suspended chords
-            [2, 7] => Some("sus2"),      // suspended 2nd
-            [5, 7] => Some("sus4"),      // suspended 4th
-            [5, 7, 10] => Some("7sus4"), // dominant 7th suspended 4th
-
-            // Extended chords (9ths)
-            [2, 4, 7, 10] => Some("9"),    // dominant 9th
-            [2, 4, 7, 11] => Some("maj9"), // major 9th
-            [2, 3, 7, 10] => Some("m9"),   // minor 9th
-
-            // Power chord
-            [7] => Some("5"), // power chord
-
-            _ => None,
-        }
-    }
-
-    #[cfg(test)]
-    mod tests {
-        use super::*;
-
-        #[test]
-        fn test_major_chords() {
-            assert_eq!(deduce_name(&[60, 64, 67]).unwrap(), "CM"); // C major
-            assert_eq!(deduce_name(&[62, 66, 69]).unwrap(), "DM"); // D major
-        }
-
-        #[test]
-        fn test_minor_chords() {
-            assert_eq!(deduce_name(&[60, 63, 67]).unwrap(), "Cm"); // C minor
-            assert_eq!(deduce_name(&[57, 60, 64]).unwrap(), "Am"); // A minor
-        }
-
-        #[test]
-        fn test_seventh_chords() {
-            assert_eq!(deduce_name(&[60, 64, 67, 71]).unwrap(), "Cmaj7"); // C major 7
-            assert_eq!(deduce_name(&[60, 64, 67, 70]).unwrap(), "C7"); // C dominant 7
-            assert_eq!(deduce_name(&[60, 63, 67, 70]).unwrap(), "Cm7"); // C minor 7
-        }
-
-        #[test]
-        fn test_other_chords() {
-            assert_eq!(deduce_name(&[60, 63, 66]).unwrap(), "Cdim"); // C diminished
-            assert_eq!(deduce_name(&[60, 64, 68]).unwrap(), "Caug"); // C augmented
-            assert_eq!(deduce_name(&[60, 65, 67]).unwrap(), "Csus4"); // C sus4
-            assert_eq!(deduce_name(&[60, 67]).unwrap(), "C5"); // C power chord
-        }
-
-        #[test]
-        fn test_edge_cases() {
-            assert_eq!(deduce_name(&[]), None);
-            assert_eq!(deduce_name(&[60]).unwrap(), "C");
-            // Multiple octaves should normalize
-            assert_eq!(deduce_name(&[48, 64, 67, 72]).unwrap(), "CM");
-        }
+        self.update_chord_text();
     }
 }

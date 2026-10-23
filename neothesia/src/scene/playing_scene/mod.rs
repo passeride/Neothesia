@@ -175,7 +175,18 @@ impl PlayingScene {
             .map(|(id, _)| id as u8 + start)
             .collect::<Vec<_>>();
 
-        self.deduced_chord_name = super::freeplay::chords::deduce_name(&notes).unwrap_or_default();
+        let options = neothesia_core::chords::RecognitionOptions::default();
+        let analysis = neothesia_core::chords::recognize(&notes, options);
+        self.deduced_chord_name = if analysis.pitch_classes.len() == 1 {
+            neothesia_core::chords::note_name(analysis.pitch_classes[0], options.spelling)
+                .to_owned()
+        } else {
+            analysis
+                .candidates
+                .first()
+                .map(|c| c.symbol.clone())
+                .unwrap_or_default()
+        };
     }
 
     #[profiling::function]

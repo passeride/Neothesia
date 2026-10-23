@@ -44,3 +44,9 @@ All binary releases:
 - [WGPU](https://wgpu.rs/)
 - [Linthesia](https://github.com/linthesia/linthesia)
 - [Synthesia](https://github.com/johndpope/pianogame)
+
+## Live chords in Free Play
+
+Enable **Chords** in Free Play to identify played MIDI chords, inversions, and
+alternative interpretations. See [chord recognition](docs/pages/chords.md) for
+the API, supported vocabulary, sustain behavior, and verification steps.

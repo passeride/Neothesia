@@ -16,6 +16,8 @@ pub struct UiState {
     pub selected_input: Option<InputDescriptor>,
 
     pub is_loading: bool,
+    pub arcade_mode: bool,
+    pub arcade_error: Option<String>,
 
     pub song: Option<Song>,
 
@@ -38,6 +40,8 @@ impl UiState {
             inputs: Vec::new(),
             selected_input: None,
             is_loading: false,
+            arcade_mode: false,
+            arcade_error: None,
             song,
 
             page_stack,
@@ -137,14 +141,21 @@ pub fn connect_io(data: &UiState, ctx: &mut Context) {
     }
 }
 
-pub fn play(data: &UiState, ctx: &mut Context) {
+pub fn play(data: &mut UiState, ctx: &mut Context) {
     let Some(song) = data.song.as_ref() else {
         return;
     };
 
-    connect_io(data, ctx);
-
-    ctx.proxy.send_event(TangentEvent::Play(song.clone())).ok();
+    if data.arcade_mode {
+        let song = song.clone();
+        connect_io(data, ctx);
+        ctx.config.save();
+        ctx.proxy.send_event(TangentEvent::Arcade(song)).ok();
+    } else {
+        let song = song.clone();
+        connect_io(data, ctx);
+        ctx.proxy.send_event(TangentEvent::Play(song)).ok();
+    }
 }
 
 pub fn freeplay(data: &UiState, ctx: &mut Context) {

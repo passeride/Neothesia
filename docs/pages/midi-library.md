@@ -2,9 +2,9 @@
 
 The home screen is a folder-backed gallery of your MIDI pieces.
 
-Future Arcade scoring, piano arrangements and cover-art record badges are described
-in the [Arcade implementation plan](../plans/arcade-mode.md). They are planned
-features and are not part of the current library behavior below.
+Choose **Arcade** on a card for scored piano performance. Personal records appear
+on procedural covers with their track/speed category; see the [Arcade guide](arcade.md).
+Authored difficulty packages and custom artwork remain on the [roadmap](../plans/arcade-mode.md).
 
 1. Click **Choose folder** and select the folder where you keep your music.
 2. Tangent saves the folder immediately and lists `.mid` and `.midi` files,
@@ -30,7 +30,7 @@ picker keeps the current one.
   unchanged; F11 also toggles fullscreen.
 - **Sort** switches between name and newest modification time. Equal dates keep
   name order; files without a modification time sort last.
-- Cards show the filename without its extension, the relative parent folder and
+- Cards show a procedural cover, labelled personal record when available, the filename without its extension, the relative parent folder and
   file size. Identical titles in different subfolders remain separate entries.
 - Previous/Next pages adapt to window size, so large catalogs remain usable.
   Only the current page's cards are rendered. Search and sorting cover the full

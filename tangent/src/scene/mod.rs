@@ -99,6 +99,7 @@ pub fn handle_pc_keyboard_to_midi_event(ctx: &mut Context, event: &WindowEvent) 
             vel: 0.into(),
         },
     };
+    ctx.input_manager.queue_scoring_input(0, message);
     ctx.proxy
         .send_event(TangentEvent::MidiInput {
             channel: 0,
@@ -134,6 +135,7 @@ fn handle_mouse_to_midi_event(
             key: key.into(),
             vel: 0.into(),
         };
+        ctx.input_manager.queue_scoring_input(0, message);
         ctx.proxy
             .send_event(TangentEvent::MidiInput {
                 channel: 0,
@@ -188,6 +190,7 @@ fn handle_mouse_to_midi_event(
             key: key.into(),
             vel: 100.into(),
         };
+        ctx.input_manager.queue_scoring_input(0, message);
         ctx.proxy
             .send_event(TangentEvent::MidiInput {
                 channel: 0,

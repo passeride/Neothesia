@@ -52,6 +52,10 @@ impl Default for WaterfallConfig {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct PlaybackConfigV1 {
+    #[serde(default)]
+    pub arcade_input_offset_ms: i32,
+    #[serde(default = "default_arcade_effects")]
+    pub arcade_effects: bool,
     #[serde(default = "default_speed_multiplier")]
     pub speed_multiplier: f32,
 }
@@ -61,10 +65,16 @@ pub enum PlaybackConfig {
     V1(PlaybackConfigV1),
 }
 
+fn default_arcade_effects() -> bool {
+    true
+}
+
 impl Default for PlaybackConfig {
     fn default() -> Self {
         Self::V1(PlaybackConfigV1 {
             speed_multiplier: default_speed_multiplier(),
+            arcade_input_offset_ms: 0,
+            arcade_effects: true,
         })
     }
 }

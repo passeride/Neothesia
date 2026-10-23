@@ -22,6 +22,8 @@ jobs:
           /tmp/score-tests
           rustc --edition=2024 --test tangent-core/src/midi_library.rs -o /tmp/library-tests
           /tmp/library-tests
+          rustc --edition=2024 --test tangent-core/src/arcade.rs -o /tmp/arcade-tests
+          /tmp/arcade-tests
 
   lints:
     runs-on: ubuntu-latest
@@ -33,6 +35,9 @@ jobs:
       - name: Test core behavior and saved appearance preferences
         shell: bash
         run: cargo test -p tangent-core --lib --locked
+      - name: Test Arcade integration, records and UI input edges
+        shell: bash
+        run: cargo test -p tangent --bin tangent -p nuon --lib --locked
       - name: Test MIDI tempo timeline
         shell: bash
         run: cargo test -p midi-file --lib --locked

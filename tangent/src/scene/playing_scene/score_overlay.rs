@@ -194,9 +194,9 @@ impl ScoreOverlay {
             0,
             "playback_score_toggle",
             if self.enabled {
-                "Score: On"
+                "Staff: On"
             } else {
-                "Score: Off"
+                "Staff: Off"
             },
         ) {
             self.enabled = !self.enabled;

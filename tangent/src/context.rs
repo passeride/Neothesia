@@ -23,6 +23,7 @@ pub struct Context {
     pub output_manager: OutputManager,
     pub input_manager: InputManager,
     pub config: Config,
+    pub records: crate::records::Records,
 
     pub proxy: EventLoopProxy<TangentEvent>,
 
@@ -69,6 +70,7 @@ impl Context {
             output_manager: Default::default(),
             input_manager: InputManager::new(proxy.clone()),
             config,
+            records: crate::records::Records::load(),
             proxy,
             frame_timestamp: std::time::Instant::now(),
 

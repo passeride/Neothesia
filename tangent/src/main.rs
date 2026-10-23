@@ -1,4 +1,5 @@
 #![allow(clippy::collapsible_match, clippy::single_match)]
+mod records;
 
 mod context;
 mod icons;
@@ -32,6 +33,7 @@ use crate::utils::window::WinitEvent;
 pub enum TangentEvent {
     /// Go to playing scene
     Play(song::Song),
+    Arcade(song::Song),
     FreePlay(Option<song::Song>),
     /// Go to main menu scene
     MainMenu(Option<song::Song>),
@@ -141,15 +143,29 @@ impl Tangent {
 
     fn user_event(&mut self, event_loop: &winit::event_loop::ActiveEventLoop, event: TangentEvent) {
         match event {
+            TangentEvent::Arcade(song) => {
+                match playing_scene::PlayingScene::new_arcade(&mut self.context, song.clone()) {
+                    Ok(to) => self.game_scene = Box::new(to),
+                    Err(error) => {
+                        self.context.input_manager.enable_scoring(false);
+                        let mut menu = menu_scene::MenuScene::new(&mut self.context, Some(song));
+                        menu.show_arcade_error(error);
+                        self.game_scene = Box::new(menu);
+                    }
+                }
+            }
             TangentEvent::Play(song) => {
+                self.context.input_manager.enable_scoring(false);
                 let to = playing_scene::PlayingScene::new(&mut self.context, song);
                 self.game_scene = Box::new(to);
             }
             TangentEvent::FreePlay(song) => {
+                self.context.input_manager.enable_scoring(false);
                 let to = scene::freeplay::FreeplayScene::new(&mut self.context, song);
                 self.game_scene = Box::new(to);
             }
             TangentEvent::MainMenu(song) => {
+                self.context.input_manager.enable_scoring(false);
                 let to = menu_scene::MenuScene::new(&mut self.context, song);
                 self.game_scene = Box::new(to);
             }

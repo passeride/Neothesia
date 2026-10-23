@@ -122,7 +122,7 @@ impl MenuScene {
         }
         self.state.is_loading = true;
         self.state.library.error = None;
-        self.futures.push(load_song(path, true));
+        self.futures.push(load_song(path, false));
     }
     pub(super) fn library_keyboard(&mut self, ctx: &Context, event: &WindowEvent) -> bool {
         if event_left_pressed(event) {
@@ -408,7 +408,16 @@ impl MenuScene {
         let bottom = height - 100.0;
         let available = (bottom - content_y - 46.0).max(0.0);
         let columns = ((body + 12.0) / 285.0).floor().max(1.0) as usize;
-        let rows = ((available + 12.0) / 116.0).floor().max(1.0) as usize;
+        let cover_h = if available >= 204.0 {
+            100.0
+        } else if available >= 144.0 {
+            40.0
+        } else {
+            0.0
+        };
+        let card_h = 104.0 + cover_h;
+        let stride = card_h + 12.0;
+        let rows = ((available + 12.0) / stride).floor().max(1.0) as usize;
         let per_page = columns * rows;
         let l = &mut self.state.library;
         let total = l.matches.len();
@@ -418,6 +427,8 @@ impl MenuScene {
             "Scanning folder…".to_owned()
         } else if let Some(error) = &l.error {
             error.clone()
+        } else if let Some(warning) = &ctx.records.warning {
+            warning.clone()
         } else if l.catalog.skipped > 0 {
             format!(
                 "{} pieces · {} entries could not be read",
@@ -442,6 +453,7 @@ impl MenuScene {
             true,
         );
         let mut open = None;
+        let mut open_arcade = None;
         if total == 0 && !busy && l.error.is_none() {
             let (title, hint) = if l.folder.is_none() {
                 (
@@ -466,7 +478,7 @@ impl MenuScene {
         let card_w = ((body - (columns - 1) as f32 * 12.0) / columns as f32).max(1.0);
         // Only this page is shaped/rendered; large catalogs do not create one
         // text buffer per file on every frame.
-        if available >= 104.0 {
+        if available >= card_h {
             for (cell, index) in l
                 .matches
                 .iter()
@@ -476,10 +488,10 @@ impl MenuScene {
             {
                 let entry = &l.catalog.entries[*index];
                 let x = margin + (cell % columns) as f32 * (card_w + 12.0);
-                let y = content_y + (cell / columns) as f32 * 116.0;
+                let y = content_y + (cell / columns) as f32 * stride;
                 let event = nuon::click_area(("library_song", &entry.path))
                     .pos(x, y)
-                    .size(card_w, 104.0)
+                    .size(card_w, card_h - 32.0)
                     .build(ui);
                 let selected = ctx
                     .config
@@ -487,7 +499,7 @@ impl MenuScene {
                     .is_some_and(|p| p == &entry.path);
                 nuon::quad()
                     .pos(x, y)
-                    .size(card_w, 104.0)
+                    .size(card_w, card_h)
                     .border_radius([12.0; 4])
                     .color(if event.is_hovered() {
                         ui.theme.hover
@@ -502,10 +514,71 @@ impl MenuScene {
                     .border_width(1.0)
                     .build(ui);
                 let chars = ((card_w - 32.0) / 8.0) as usize;
+                if cover_h > 0.0 {
+                    // A deterministic procedural cover, drawn only for this page.
+                    for (n, byte) in entry.title.bytes().take(12).enumerate() {
+                        let bar_h = (22.0 + (byte % 50) as f32).min(cover_h - 12.0);
+                        let mut accent = ui.theme.accent;
+                        accent.a = 0.12;
+                        nuon::quad()
+                            .pos(
+                                x + 16.0 + n as f32 * ((card_w - 40.0) / 12.0),
+                                y + cover_h - 10.0 - bar_h,
+                            )
+                            .size(8.0, bar_h)
+                            .border_radius([4.0; 4])
+                            .color(accent)
+                            .build(ui);
+                    }
+                    if let Some(record) = ctx.records.for_entry(entry) {
+                        text(
+                            ui,
+                            x + 16.0,
+                            y + 8.0,
+                            card_w - 32.0,
+                            32.0,
+                            if cover_h > 40.0 { 22.0 } else { 16.0 },
+                            &format!(
+                                "BEST {:07}{}",
+                                record.score,
+                                if record.full_combo { " · FC" } else { "" }
+                            ),
+                            false,
+                        );
+                        if cover_h > 40.0 {
+                            text(
+                                ui,
+                                x + 16.0,
+                                y + 50.0,
+                                card_w - 32.0,
+                                30.0,
+                                12.0,
+                                &shorten(&record.category(), chars),
+                                true,
+                            );
+                        }
+                    } else {
+                        text(
+                            ui,
+                            x + 16.0,
+                            y + 8.0,
+                            card_w - 32.0,
+                            26.0,
+                            14.0,
+                            "ARCADE · UNPLAYED",
+                            true,
+                        );
+                    }
+                    nuon::quad()
+                        .pos(x + 16.0, y + cover_h - 2.0)
+                        .size(card_w - 32.0, 1.0)
+                        .color(ui.theme.border)
+                        .build(ui);
+                }
                 text(
                     ui,
                     x + 16.0,
-                    y + 12.0,
+                    y + 12.0 + cover_h,
                     card_w - 32.0,
                     38.0,
                     16.0,
@@ -520,33 +593,53 @@ impl MenuScene {
                 text(
                     ui,
                     x + 16.0,
-                    y + 52.0,
+                    y + 52.0 + cover_h,
                     card_w - 32.0,
                     20.0,
                     12.0,
-                    &shorten(&parent.to_string_lossy(), chars),
+                    &shorten(
+                        &if cover_h <= 40.0 {
+                            ctx.records
+                                .for_entry(entry)
+                                .map(|r| format!("{:07} · {}", r.score, r.category()))
+                                .unwrap_or_else(|| parent.to_string_lossy().into_owned())
+                        } else {
+                            parent.to_string_lossy().into_owned()
+                        },
+                        chars,
+                    ),
                     true,
                 );
                 text(
                     ui,
                     x + 16.0,
-                    y + 77.0,
-                    card_w - 85.0,
+                    y + 77.0 + cover_h,
+                    card_w - 165.0,
                     18.0,
                     12.0,
                     &file_size(entry.bytes),
                     true,
                 );
-                text(
-                    ui,
-                    x + card_w - 57.0,
-                    y + 77.0,
-                    40.0,
-                    18.0,
-                    12.0,
-                    "Play →",
-                    false,
-                );
+                if nuon::button()
+                    .id(("card-arcade", &entry.path))
+                    .pos(x + card_w - 146.0, y + card_h - 28.0)
+                    .size(76.0, 23.0)
+                    .label("Arcade")
+                    .border_radius([6.0; 4])
+                    .build(ui)
+                {
+                    open_arcade = Some(entry.path.clone());
+                }
+                if nuon::button()
+                    .id(("card-play", &entry.path))
+                    .pos(x + card_w - 62.0, y + card_h - 28.0)
+                    .size(48.0, 23.0)
+                    .label("Play")
+                    .border_radius([6.0; 4])
+                    .build(ui)
+                {
+                    open = Some(entry.path.clone());
+                }
                 if event.is_clicked() {
                     open = Some(entry.path.clone());
                 }
@@ -621,12 +714,24 @@ impl MenuScene {
             ui,
             margin + 125.0,
             height - 60.0,
-            (body - 335.0).max(0.0),
+            (body - 435.0).max(0.0),
             38.0,
             13.0,
-            &shorten(song_name, ((body - 335.0).max(0.0) / 7.0) as usize),
+            &shorten(song_name, ((body - 435.0).max(0.0) / 7.0) as usize),
             true,
         );
+        if action(
+            ui,
+            "library_arcade",
+            (width - margin - 288.0, height - 60.0),
+            (90.0, 38.0),
+            "Arcade",
+            self.state.song.is_some(),
+        ) {
+            self.state.arcade_mode = true;
+            self.state.arcade_error = None;
+            self.state.go_to(Page::TrackSelection);
+        }
         if action(
             ui,
             "library_tracks",
@@ -635,6 +740,7 @@ impl MenuScene {
             &locals::menu::tracks(),
             self.state.song.is_some(),
         ) {
+            self.state.arcade_mode = false;
             self.state.go_to(Page::TrackSelection);
         }
         if action(
@@ -645,10 +751,17 @@ impl MenuScene {
             &locals::menu::play(),
             self.state.song.is_some(),
         ) {
-            state::play(&self.state, ctx);
+            self.state.arcade_mode = false;
+            state::play(&mut self.state, ctx);
         }
         if let Some(path) = open {
             self.open_library_song(path);
+        } else if let Some(path) = open_arcade
+            && !self.state.is_loading
+        {
+            self.state.is_loading = true;
+            self.state.library.error = None;
+            self.futures.push(load_song(path, true));
         }
     }
 }
@@ -671,11 +784,14 @@ pub(super) fn finish_song(
     state.is_loading = false;
     match result {
         Ok(midi) => {
-            ctx.config.set_last_opened_song(Some(path));
+            ctx.config.set_last_opened_song(Some(path.clone()));
             ctx.config.save();
-            state.song = Some(Song::new(midi));
+            let mut song = Song::new(midi);
+            song.set_source(path);
+            state.song = Some(song);
             state.library.error = None;
             if play {
+                state.arcade_mode = false;
                 state::play(state, ctx);
             }
         }
@@ -687,13 +803,21 @@ pub(super) fn finish_song(
         }
     }
 }
-fn load_song(path: PathBuf, play: bool) -> BoxFuture<MsgFn> {
+fn load_song(path: PathBuf, arcade: bool) -> BoxFuture<MsgFn> {
     on_async(
         async move {
             let result = read_song(path.clone()).await;
             (path, result)
         },
-        move |(path, result), state, ctx| finish_song(state, ctx, path, result, play),
+        move |(path, result), state, ctx| {
+            let valid = result.is_ok();
+            finish_song(state, ctx, path, result, !arcade);
+            if arcade && valid {
+                state.arcade_mode = true;
+                state.arcade_error = None;
+                state.go_to(Page::TrackSelection);
+            }
+        },
     )
 }
 

@@ -16,6 +16,7 @@ pub struct MidiPlayer {
     song: Song,
     play_along: PlayAlong,
     separate_channels: bool,
+    arcade: bool,
 }
 
 impl MidiPlayer {
@@ -47,6 +48,7 @@ impl MidiPlayer {
             play_along: PlayAlong::new(user_keyboard_range),
             song,
             separate_channels,
+            arcade: false,
         };
         // Let's reset programs,
         // for timestamp 0 most likely all programs will be 0, so this should clean any leftovers
@@ -55,6 +57,34 @@ impl MidiPlayer {
         player.update(Duration::ZERO);
 
         player
+    }
+
+    pub fn set_arcade(&mut self) {
+        self.arcade = true;
+        // Human input owns channel 1 in Arcade. Backing tracks use other
+        // channels, so their sustain/panic controllers cannot answer or cut
+        // the player's piano voice.
+        self.output
+            .midi_event(u4::new(0), MidiMessage::ProgramChange { program: 0.into() });
+        let programs = self
+            .song
+            .file
+            .program_track
+            .program_for_timestamp(&Duration::ZERO);
+        for track in self.song.file.tracks.iter() {
+            if self.song.config.tracks[track.track_id].player != PlayerConfig::Auto {
+                continue;
+            }
+            if let Some(note) = track.notes.first() {
+                let program = programs.get(&note.channel).copied().unwrap_or(0);
+                self.output.midi_event(
+                    u4::new(arcade_backing_channel(note.channel, track.track_color_id)),
+                    MidiMessage::ProgramChange {
+                        program: program.into(),
+                    },
+                );
+            }
+        }
     }
 
     pub fn song(&self) -> &Song {
@@ -72,7 +102,13 @@ impl MidiPlayer {
         events.iter().for_each(|event| {
             let config = &self.song.config.tracks[event.track_id];
 
-            let channel = if self.separate_channels {
+            let channel = if self.arcade {
+                if config.player == PlayerConfig::Auto {
+                    arcade_backing_channel(event.channel, event.track_color_id)
+                } else {
+                    0
+                }
+            } else if self.separate_channels {
                 event.track_color_id as u8
             } else {
                 event.channel
@@ -83,13 +119,15 @@ impl MidiPlayer {
                         .midi_event(u4::new(channel), event.message);
                 }
                 PlayerConfig::Human => {
-                    self.play_along
-                        .midi_event(MidiEventSource::File, &event.message);
+                    if !self.arcade {
+                        self.play_along
+                            .midi_event(MidiEventSource::File, &event.message);
+                    }
 
                     // In Human mode note events from the file are targets for the player,
                     // not notes to be played by the synthesizer. Keep forwarding controller
                     // and other non-note events so the track still sounds as intended.
-                    if should_forward_human_event(&event.message) {
+                    if !self.arcade && should_forward_human_event(&event.message) {
                         self.output.midi_event(u4::new(channel), event.message);
                     }
                 }
@@ -213,8 +251,11 @@ impl MidiPlayer {
     }
 
     pub fn user_midi_event(&mut self, channel: u8, message: &MidiMessage) {
-        self.output.midi_event(u4::new(channel), *message);
-        self.play_along.midi_event(MidiEventSource::User, message);
+        self.output
+            .midi_event(u4::new(if self.arcade { 0 } else { channel }), *message);
+        if !self.arcade {
+            self.play_along.midi_event(MidiEventSource::User, message);
+        }
     }
 }
 
@@ -391,5 +432,27 @@ impl PlayAlong {
 
     pub fn are_required_keys_pressed(&self) -> bool {
         self.required_notes.is_empty()
+    }
+}
+
+fn arcade_backing_channel(source: u8, track: usize) -> u8 {
+    const CHANNELS: [u8; 14] = [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15];
+    if source == 9 {
+        9
+    } else {
+        CHANNELS[track % CHANNELS.len()]
+    }
+}
+
+#[cfg(test)]
+mod arcade_output_tests {
+    use super::*;
+    #[test]
+    fn backing_never_uses_the_human_channel_or_accidentally_becomes_percussion() {
+        for track in 0..128 {
+            assert_ne!(arcade_backing_channel(0, track), 0);
+            assert_ne!(arcade_backing_channel(0, track), 9);
+            assert_eq!(arcade_backing_channel(9, track), 9);
+        }
     }
 }

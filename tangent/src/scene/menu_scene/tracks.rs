@@ -39,75 +39,146 @@ impl super::MenuScene {
             });
 
             nuon::translate().x(win_w).build(ui, |ui| {
-                nuon::translate().x(-w - gap).add_to_current(ui);
+                nuon::translate().x(-160.0 - gap).add_to_current(ui);
 
-                if neo_btn_icon(ui, w, h, icons::play_icon()) {
-                    state::play(&self.state, ctx);
+                if nuon::button()
+                    .id("tracks-start")
+                    .size(160.0, h)
+                    .label(if self.state.arcade_mode {
+                        "Start Arcade"
+                    } else {
+                        "Play"
+                    })
+                    .build(ui)
+                {
+                    state::play(&mut self.state, ctx);
                 }
             });
         });
 
+        let mode_label = if self.state.arcade_mode {
+            "Arcade"
+        } else {
+            "Playback"
+        };
+        if nuon::button()
+            .id("track-mode")
+            .pos(24.0, 14.0)
+            .size(120.0, 32.0)
+            .label(mode_label)
+            .border_radius([8.0; 4])
+            .build(ui)
+        {
+            self.state.arcade_mode = !self.state.arcade_mode;
+            self.state.arcade_error = None;
+        }
+        let hint = if self.state.arcade_mode {
+            "Choose Play Along on the tracks you will play. Auto Play is backing."
+        } else {
+            "Choose which tracks to hear and play."
+        };
+        nuon::label()
+            .pos(156.0, 14.0)
+            .size((win_w - 180.0).max(0.0), 32.0)
+            .font_size(13.0)
+            .text(hint)
+            .build(ui);
+        if self.state.arcade_mode {
+            arcade_setup(ui, ctx, win_w);
+            if let Some(error) = &self.state.arcade_error {
+                nuon::label()
+                    .pos(24.0, 126.0)
+                    .size(win_w - 48.0, 48.0)
+                    .font_size(13.0)
+                    .color([244, 132, 119])
+                    .text(error)
+                    .build(ui);
+            } else {
+                nuon::label()
+                    .pos(24.0, 126.0)
+                    .size(win_w - 48.0, 32.0)
+                    .font_size(12.0)
+                    .text(
+                        "Original arrangement · exact octave · pause makes this a practice result",
+                    )
+                    .build(ui);
+            }
+        }
+
         if let Some(song) = self.state.song.as_mut() {
-            nuon::scroll("tracks_scroll")
-                .scissor_size(win_w, (win_h - bottom_bar_h).max(0.0))
+            nuon::translate()
+                .y(if self.state.arcade_mode { 180.0 } else { 60.0 })
                 .build(ui, |ui| {
-                    let gap = 14.0;
+                    nuon::scroll("tracks_scroll")
+                        .scissor_size(
+                            win_w,
+                            (win_h
+                                - bottom_bar_h
+                                - if self.state.arcade_mode { 180.0 } else { 60.0 })
+                            .max(0.0),
+                        )
+                        .build(ui, |ui| {
+                            let gap = 14.0;
 
-                    let mut tracks = song
-                        .file
-                        .tracks
-                        .iter()
-                        .filter(|t| !t.notes.is_empty())
-                        .enumerate();
+                            let mut tracks = song
+                                .file
+                                .tracks
+                                .iter()
+                                .filter(|t| !t.notes.is_empty())
+                                .enumerate();
 
-                    let layout = CardsLayout::new(win_w, tracks.clone().count());
+                            let layout = CardsLayout::new(win_w, tracks.clone().count());
 
-                    let top_margin = 60.0;
+                            let top_margin = 0.0;
 
-                    nuon::translate().y(top_margin).add_to_current(ui);
+                            nuon::translate().y(top_margin).add_to_current(ui);
 
-                    loop {
-                        let mut end = false;
-                        nuon::translate()
-                            .x(nuon::center_x(win_w, layout.width))
-                            .build(ui, |ui| {
-                                for _ in 0..layout.columns {
-                                    let Some((id, track)) = tracks.next() else {
-                                        end = true;
-                                        break;
-                                    };
+                            loop {
+                                let mut end = false;
+                                nuon::translate()
+                                    .x(nuon::center_x(win_w, layout.width))
+                                    .build(ui, |ui| {
+                                        for _ in 0..layout.columns {
+                                            let Some((id, track)) = tracks.next() else {
+                                                end = true;
+                                                break;
+                                            };
 
-                                    let config = &song.config.tracks[track.track_id];
+                                            let config = &song.config.tracks[track.track_id];
 
-                                    match self::track_card(
-                                        ctx,
-                                        ui,
-                                        nuon::Id::hash_with(|h| {
-                                            "track_card".hash(h);
-                                            id.hash(h);
-                                        }),
-                                        track,
-                                        config,
-                                    ) {
-                                        TrackCardEvent::PlayerConfig(player) => {
-                                            song.config.tracks[track.track_id].player = player;
+                                            match self::track_card(
+                                                ctx,
+                                                ui,
+                                                nuon::Id::hash_with(|h| {
+                                                    "track_card".hash(h);
+                                                    id.hash(h);
+                                                }),
+                                                track,
+                                                config,
+                                            ) {
+                                                TrackCardEvent::PlayerConfig(player) => {
+                                                    song.config.tracks[track.track_id].player =
+                                                        player;
+                                                    self.state.arcade_error = None;
+                                                }
+                                                TrackCardEvent::SetVisible(visible) => {
+                                                    song.config.tracks[track.track_id].visible =
+                                                        visible;
+                                                }
+                                                TrackCardEvent::Idle => {}
+                                            }
+
+                                            nuon::translate().x(CARD_W + gap).add_to_current(ui);
                                         }
-                                        TrackCardEvent::SetVisible(visible) => {
-                                            song.config.tracks[track.track_id].visible = visible;
-                                        }
-                                        TrackCardEvent::Idle => {}
-                                    }
+                                    });
 
-                                    nuon::translate().x(CARD_W + gap).add_to_current(ui);
+                                nuon::translate().y(CARD_H + gap).add_to_current(ui);
+
+                                if end {
+                                    break;
                                 }
-                            });
-
-                        nuon::translate().y(CARD_H + gap).add_to_current(ui);
-
-                        if end {
-                            break;
-                        }
-                    }
+                            }
+                        });
                 });
         }
     }
@@ -187,7 +258,14 @@ fn track_card(
         midi_file::INSTRUMENT_NAMES[instrument_id]
     };
 
-    let subtitle = format!("{} Notes", track.notes.len());
+    let title = format!("{} · {title}", track.track_id + 1);
+    let (min, max) = config.pitch_range.unwrap_or((0, 0));
+    let subtitle = format!(
+        "{} notes · {}–{}",
+        track.notes.len(),
+        tangent_core::chords::notes::pitch_label(min),
+        tangent_core::chords::notes::pitch_label(max)
+    );
 
     nuon::quad()
         .size(card_w, card_h)
@@ -318,4 +396,72 @@ fn track_card(
     });
 
     res
+}
+
+fn arcade_setup(ui: &mut nuon::Ui, ctx: &mut Context, width: f32) {
+    let speed = crate::scene::playing_scene::arcade::speed(ctx);
+    let offset = ctx.config.arcade_input_offset_ms();
+    let effects = ctx.config.arcade_effects();
+    for (id, x, label, delta) in [
+        ("arcade-slower", 24.0, "−", -100i32),
+        ("arcade-faster", 158.0, "+", 100i32),
+    ] {
+        if nuon::button()
+            .id(id)
+            .pos(x, 58.0)
+            .size(30.0, 30.0)
+            .label(label)
+            .build(ui)
+        {
+            ctx.config
+                .set_speed_multiplier((speed as i32 + delta).clamp(250, 2000) as f32 / 1000.0);
+        }
+    }
+    nuon::label()
+        .pos(56.0, 58.0)
+        .size(100.0, 30.0)
+        .font_size(13.0)
+        .text(format!("{}% speed", speed as f32 / 10.0))
+        .build(ui);
+    for (id, x, label, delta) in [
+        ("arcade-offset-less", 208.0, "−", -5),
+        ("arcade-offset-more", 380.0, "+", 5),
+    ] {
+        if nuon::button()
+            .id(id)
+            .pos(x, 58.0)
+            .size(30.0, 30.0)
+            .label(label)
+            .build(ui)
+        {
+            ctx.config.set_arcade_input_offset_ms(offset + delta);
+        }
+    }
+    nuon::label()
+        .pos(240.0, 58.0)
+        .size(138.0, 30.0)
+        .font_size(13.0)
+        .text(format!("Input {offset:+} ms"))
+        .build(ui);
+    if nuon::button()
+        .id("arcade-effects")
+        .pos(430.0, 58.0)
+        .size((width - 454.0).clamp(100.0, 180.0), 30.0)
+        .label(if ctx.config.arcade_effects() {
+            "Effects: On"
+        } else {
+            "Effects: Off"
+        })
+        .build(ui)
+    {
+        ctx.config.set_arcade_effects(!ctx.config.arcade_effects());
+    }
+    nuon::label().pos(24.0,94.0).size(width-48.0,24.0).font_size(12.0)
+        .text("Positive input offset corrects a delayed keyboard. Speed and track choices have separate records.").build(ui);
+    if speed != crate::scene::playing_scene::arcade::speed(ctx)
+        || offset != ctx.config.arcade_input_offset_ms()
+        || effects != ctx.config.arcade_effects()
+    {
+        ctx.config.save();
+    }
 }

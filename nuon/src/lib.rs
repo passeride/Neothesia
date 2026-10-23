@@ -326,6 +326,7 @@ pub struct Ui {
     pointer_pos: Point,
     pointer_pos_delta: Point,
     scroll_delta: f32,
+    mouse_press_pos: Point,
     pub mouse_pressed: bool,
     pub mouse_down: bool,
 
@@ -352,6 +353,7 @@ impl Ui {
             pointer_pos: Point::new(-1.0, -1.0),
             pointer_pos_delta: Point::new(0.0, 0.0),
             scroll_delta: 0.0,
+            mouse_press_pos: Point::zero(),
             mouse_pressed: false,
             mouse_down: false,
             translation_stack: TranslationStack::default(),
@@ -387,12 +389,14 @@ impl Ui {
     }
 
     pub fn mouse_down(&mut self) {
+        self.mouse_press_pos = self.pointer_pos;
         self.mouse_pressed = true;
         self.mouse_down = true;
     }
 
     pub fn mouse_up(&mut self) {
-        self.mouse_pressed = false;
+        // Retain the press edge until done(): a quick click may begin and end
+        // between two rendered frames, especially during a scene transition.
         self.mouse_down = false;
     }
 
@@ -1050,7 +1054,22 @@ impl ClickArea {
             ui.hovered = None;
         }
 
-        if ui.mouse_pressed && mouseover && ui.active.is_none() {
+        let press_in_scissor = ui
+            .layers
+            .current_scissor_rect()
+            .is_none_or(|r| r.contains(ui.mouse_press_pos));
+        if ui.mouse_pressed
+            && rect.contains(ui.mouse_press_pos)
+            && press_in_scissor
+            && ui.active.is_none()
+        {
+            ui.mouse_pressed = false;
+            if !ui.mouse_down {
+                return ClickAreaEvent::PressEnd {
+                    clicked: mouseover,
+                    local_pos,
+                };
+            }
             ui.active = Some(id);
             ui.active_widget_is_still_alive = true;
             return ClickAreaEvent::PressStart { local_pos };
@@ -1564,4 +1583,42 @@ pub fn combo_list<'a, ITEM: ToString>(
     }
 
     res
+}
+
+#[cfg(test)]
+mod click_timing_tests {
+    use super::*;
+    #[test]
+    fn a_complete_click_between_frames_is_reported_once() {
+        let mut ui = Ui::new();
+        ui.mouse_move(10.0, 10.0);
+        ui.mouse_down();
+        ui.mouse_up();
+        assert!(click_area("a").size(20.0, 20.0).build(&mut ui).is_clicked());
+        assert!(!click_area("b").size(20.0, 20.0).build(&mut ui).is_clicked());
+        ui.done();
+        assert!(!click_area("a").size(20.0, 20.0).build(&mut ui).is_clicked());
+    }
+    #[test]
+    fn press_origin_and_release_position_both_matter() {
+        let mut ui = Ui::new();
+        ui.mouse_move(30.0, 30.0);
+        ui.mouse_down();
+        ui.mouse_move(10.0, 10.0);
+        ui.mouse_up();
+        assert!(!click_area("a").size(20.0, 20.0).build(&mut ui).is_clicked());
+        ui.done();
+        ui.mouse_move(10.0, 10.0);
+        ui.mouse_down();
+        assert!(
+            click_area("a")
+                .size(20.0, 20.0)
+                .build(&mut ui)
+                .is_press_start()
+        );
+        ui.done();
+        ui.mouse_move(30.0, 30.0);
+        ui.mouse_up();
+        assert!(!click_area("a").size(20.0, 20.0).build(&mut ui).is_clicked());
+    }
 }

@@ -134,6 +134,12 @@ impl MenuScene {
         scene
     }
 
+    pub fn show_arcade_error(&mut self, error: String) {
+        self.state.arcade_mode = true;
+        self.state.arcade_error = Some(error);
+        self.state.go_to(Page::TrackSelection);
+    }
+
     fn main_ui(&mut self, ctx: &mut Context) {
         if self.state.is_loading() {
             let width = ctx.window_state.logical_size.width;
@@ -294,7 +300,8 @@ impl Scene for MenuScene {
                 }
 
                 if event.key_pressed(Key::Named(NamedKey::Enter)) {
-                    state::play(&self.state, ctx)
+                    self.state.arcade_mode = false;
+                    state::play(&mut self.state, ctx)
                 }
 
                 if event.key_pressed(Key::Named(NamedKey::Escape)) {
@@ -320,7 +327,7 @@ impl Scene for MenuScene {
             }
             Page::TrackSelection => {
                 if event.key_pressed(Key::Named(NamedKey::Enter)) {
-                    state::play(&self.state, ctx);
+                    state::play(&mut self.state, ctx);
                 }
 
                 if event.key_pressed(Key::Named(NamedKey::Escape)) {

@@ -29,10 +29,12 @@ mod toast_manager;
 use toast_manager::ToastManager;
 
 mod animation;
+pub(crate) mod arcade;
 mod score_overlay;
 mod top_bar;
 
 pub struct PlayingScene {
+    arcade: Option<arcade::Session>,
     background: tangent_core::render::BgPipeline,
     keyboard: Keyboard,
     waterfall: WaterfallRenderer,
@@ -116,6 +118,7 @@ impl PlayingScene {
         ));
 
         Self {
+            arcade: None,
             background: tangent_core::render::BgPipeline::new(&ctx.gpu),
             keyboard,
             guidelines,
@@ -138,6 +141,20 @@ impl PlayingScene {
             top_bar: TopBar::new(),
             score_overlay,
         }
+    }
+
+    pub fn new_arcade(ctx: &mut Context, mut song: Song) -> Result<Self, String> {
+        let session = arcade::Session::new(ctx, &song)?;
+        for track in &mut song.config.tracks {
+            if track.player == crate::song::PlayerConfig::Human {
+                track.visible = true;
+            }
+        }
+        let mut scene = Self::new(ctx, song);
+        ctx.input_manager.enable_scoring(true);
+        scene.player.set_arcade();
+        scene.arcade = Some(session);
+        Ok(scene)
     }
 
     fn update_glow(&mut self, delta: Duration) {
@@ -195,7 +212,18 @@ impl PlayingScene {
     }
 
     #[profiling::function]
-    fn update_midi_player(&mut self, ctx: &Context, delta: Duration) -> f32 {
+    fn update_midi_player(&mut self, ctx: &mut Context, delta: Duration) -> f32 {
+        if let Some(session) = &mut self.arcade {
+            let desired = session.update(ctx, self.player.song());
+            session.check_device(ctx, &mut self.player);
+            let delta = desired.saturating_sub(self.player.time());
+            let midi_events = self.player.update(delta);
+            self.keyboard.file_midi_events(&ctx.config, &midi_events);
+            if session.finished {
+                self.player.pause();
+            }
+            return self.player.time_without_lead_in() + ctx.config.animation_offset();
+        }
         if self.top_bar.is_looper_active() && self.player.time() > self.top_bar.loop_end_timestamp()
         {
             self.player.set_time(self.top_bar.loop_start_timestamp());
@@ -234,7 +262,9 @@ impl Scene for PlayingScene {
         self.quad_renderer_bg.clear();
         self.quad_renderer_fg.clear();
 
-        self.rewind_controller.update(&mut self.player, ctx, delta);
+        if self.arcade.is_none() {
+            self.rewind_controller.update(&mut self.player, ctx, delta);
+        }
         self.toast_manager.update(&mut self.text_renderer);
 
         let time = self.update_midi_player(ctx, delta);
@@ -262,7 +292,9 @@ impl Scene for PlayingScene {
         self.update_glow(delta);
 
         let previous_visual = ctx.config.visuals();
-        TopBar::update(self, ctx);
+        if self.arcade.is_none() {
+            TopBar::update(self, ctx);
+        }
         let current_visual = ctx.config.visuals();
         if previous_visual.theme != current_visual.theme
             || previous_visual.soft_note_colors != current_visual.soft_note_colors
@@ -283,7 +315,7 @@ impl Scene for PlayingScene {
             &mut self.text_renderer,
         );
 
-        if ctx.config.chord_identifier() {
+        if self.arcade.is_none() && ctx.config.chord_identifier() {
             nuon::label()
                 .text(&self.deduced_chord_name)
                 .font_size(25.0)
@@ -293,6 +325,9 @@ impl Scene for PlayingScene {
                 .build(&mut self.nuon);
         }
 
+        if let Some(session) = &mut self.arcade {
+            session.ui(ctx, &mut self.player, &self.keyboard, &mut self.nuon);
+        }
         super::render_nuon(&mut self.nuon, &mut self.nuon_renderer, ctx);
 
         self.quad_renderer_bg.prepare();
@@ -314,7 +349,7 @@ impl Scene for PlayingScene {
             ctx.window_state.scale_factor as f32,
         );
 
-        if self.player.is_finished() && !self.player.is_paused() {
+        if self.arcade.is_none() && self.player.is_finished() && !self.player.is_paused() {
             ctx.proxy
                 .send_event(TangentEvent::MainMenu(Some(self.player.song().clone())))
                 .ok();
@@ -339,6 +374,40 @@ impl Scene for PlayingScene {
     }
 
     fn window_event(&mut self, ctx: &mut Context, event: &WindowEvent) {
+        if let Some(session) = &mut self.arcade {
+            if matches!(event, WindowEvent::Focused(false)) {
+                session.pause(ctx, &mut self.player);
+                self.keyboard.reset_notes();
+            }
+            if event.key_released(Key::Named(NamedKey::Escape))
+                || event.back_mouse_pressed()
+                || event.key_released(Key::Named(NamedKey::Space))
+            {
+                session.toggle_pause(ctx, &mut self.player);
+                self.keyboard.reset_notes();
+            }
+            if event.key_released(Key::Character("r")) && session.finished {
+                ctx.proxy
+                    .send_event(TangentEvent::Arcade(self.player.song().clone()))
+                    .ok();
+            }
+            let active = !session.paused() && !session.finished;
+            if active {
+                super::handle_pc_keyboard_to_midi_event(ctx, event);
+                super::handle_mouse_to_midi_event(
+                    &mut self.keyboard,
+                    &mut self.mouse_to_midi_state,
+                    ctx,
+                    event,
+                    ctx.window_state.cursor_logical_position.y < 100.0,
+                );
+            }
+            if event.window_resized() || event.scale_factor_changed() {
+                self.resize(ctx);
+            }
+            super::handle_nuon_window_event(&mut self.nuon, event, ctx);
+            return;
+        }
         self.rewind_controller
             .handle_window_event(ctx, event, &mut self.player);
 

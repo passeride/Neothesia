@@ -1,9 +1,19 @@
 # Arcade mode: gameplay, scoring and presentation plan
 
-Status: **design proposal, not implemented**. Prepared 2026-10-23 against
-`4c76887553c7b5fc3cc4f9872fb25e047a506569` on `feat/live-chord-recognition`.
-This is an implementation handoff with proposed rules, not a claim that the
-current Windows build includes Arcade. Numeric tuning needs real MIDI playtests.
+Status: **initial playable implementation delivered; remaining features are a roadmap**.
+The [Arcade guide](../pages/arcade.md) describes current behavior and limits.
+The original design was prepared 2026-10-23 against
+`4c76887553c7b5fc3cc4f9872fb25e047a506569`; the application is now Tangent.
+
+Implemented: deterministic attack scoring, callback timestamps, fixed-time MIDI
+play, track/speed selection, manual calibration, countdown, bounded hit effects,
+combo/tier HUD, pause with practice eligibility, results, persistent personal
+records and procedural gallery covers with labelled best scores.
+
+Remaining: authored difficulty packages, real cover-art loading, guided/per-device
+calibration, richer stage effects and Windows/physical-piano validation. The
+initial record store uses immutable, committed RON run files rather than SQLite.
+The sections below preserve the intended full design; they are not all current UI.
 
 ## Product direction
 

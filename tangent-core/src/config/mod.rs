@@ -281,6 +281,19 @@ impl Config {
         self.waterfall.note_labels
     }
 
+    pub fn arcade_input_offset_ms(&self) -> i32 {
+        self.playback.arcade_input_offset_ms.clamp(-250, 250)
+    }
+    pub fn set_arcade_input_offset_ms(&mut self, offset: i32) {
+        self.playback.arcade_input_offset_ms = offset.clamp(-250, 250);
+    }
+    pub fn arcade_effects(&self) -> bool {
+        self.playback.arcade_effects
+    }
+    pub fn set_arcade_effects(&mut self, enabled: bool) {
+        self.playback.arcade_effects = enabled;
+    }
+
     pub fn speed_multiplier(&self) -> f32 {
         self.playback.speed_multiplier
     }

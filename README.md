@@ -52,7 +52,7 @@ Enable **Notes** for live treble/bass staff notation, or **Note practice** to le
 reading individual notes. Choose treble, bass or both, optional sharps, and hints.
 Single-note practice continues without a score or ending and requires the correct octave.
 
-Normal MIDI playback also has a **Score** overlay: choose scrolling notation with
+Normal MIDI playback also has a **Staff** overlay: choose scrolling notation with
 a fixed playhead or stationary pages with a moving playhead. Staff size, beat
 window and accidental spelling are adjustable. A small ring at the playhead shows
 your played pitches: green for a match, orange for a mismatch, with semitone
@@ -74,3 +74,17 @@ files. Tangent remembers the folder and scans it at startup, with optional
 subfolders, search, name/newest sorting and pages that fit the window. Click a
 piece to play it; use Refresh after changing files. See the
 [MIDI library guide](docs/pages/midi-library.md) for details.
+
+
+## Arcade performance
+
+Choose **Arcade** on a MIDI card, select Play Along target tracks, and play to a
+fixed timeline with Perfect/Great/Good judgements, combo and ×1–×4 multipliers.
+A perfect complete run earns 1,000,000 points. Results show accuracy, timing,
+misses/extras and personal-best progress; eligible records survive restart and
+appear on gallery covers with their track/speed category.
+
+Manual input calibration and effects can be adjusted before play. Pausing keeps
+a practice result rather than replacing an uninterrupted record. The original
+MIDI arrangement is supported now; authored difficulty packages and custom cover
+art remain planned. See the [Arcade guide](docs/pages/arcade.md).

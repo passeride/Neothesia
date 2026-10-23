@@ -27,3 +27,11 @@
 | **Backspace** | Remove the last character (or selected search) |
 | **Enter** | Play the first matching piece |
 | **Escape** | Leave search focus before the normal menu action |
+
+
+## Arcade
+
+- **Space / Escape**: pause or resume. A paused/interrupted attempt is a practice result.
+- **R** on results: retry from the beginning.
+- Use **Gallery** in the pause/results panel to exit.
+- Seek, loop, speed and calibration changes during a run are disabled; choose them before Start.

@@ -4,6 +4,7 @@ pub use dpi;
 pub use piano_layout;
 pub use wgpu_jumpstart::{Color, Gpu, TransformUniform, Uniform};
 
+pub mod arcade;
 pub mod chords;
 pub mod config;
 pub mod font_system;

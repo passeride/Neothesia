@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
-      - name: Test chord recognition, training, and live MIDI note state
+      - name: Test chord recognition, note reading, training, and live MIDI state
         shell: bash
         run: |
           rustc --edition=2024 --test neothesia-core/src/chords/mod.rs -o /tmp/chord-tests

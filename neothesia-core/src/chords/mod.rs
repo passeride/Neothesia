@@ -2,6 +2,7 @@
 //! or harmonic intent, so candidates are ranked hypotheses rather than probabilities.
 
 pub mod live;
+pub mod notes;
 pub mod training;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]

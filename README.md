@@ -54,3 +54,7 @@ the API, supported vocabulary, sustain behavior, and verification steps.
 Enable **Training** beside the Chords switch to practice 20 common chords with
 chord names, note names, keyboard markers, and automatic progression after a
 correct answer.
+
+Enable **Notes** for live treble/bass staff notation, or **Note practice** to learn
+reading individual notes. Choose treble, bass or both, optional sharps, and hints.
+Single-note exercises require the correct octave.

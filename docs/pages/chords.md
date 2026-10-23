@@ -145,3 +145,67 @@ Additional physical/UI smoke test:
 Six automated training tests cover hold timing, accepted inversions/doubles,
 wrong/extra/incomplete notes, initial release, sustained-note release gating,
 full-series completion/restart, and displayed note spelling.
+
+## Live notation and single-note practice
+
+**Notes: On** shows sounding MIDI pitches on two five-line staves, with G/treble
+and F/bass clefs, quarter-note heads/stems, sharps and ledger lines. The footer
+shows note names with scientific octave numbers (C4 = MIDI 60 = middle C).
+The display uses international B, not Norwegian H. Staves cover C2–C6; MIDI
+pitches outside that window remain in the named footer, with an outside-view
+count. At most 12 sounding notes are drawn, depending on window width. Notes
+are spaced horizontally for readability; this is an instantaneous pitch view,
+not a scrolling score or rhythmic transcription. Sharps are used consistently;
+flat/enharmonic spelling and key signatures are not inferred.
+
+**Note practice: On** asks you to read one gold note on the staff and play it.
+The answer name and target-key marker are hidden initially. **Hint: On** reveals
+both; after success the name is always revealed and the target turns green.
+White notes and the `Played:` footer show what you are actually playing.
+Training uses the exercise's clef for the correctly played target, including
+middle C written above the bass staff.
+
+- Click the range control to cycle **Both clefs → Treble → Bass → Both clefs**.
+  Treble covers C4–C6, bass covers C2–C4. Both alternates clefs, ten tasks each.
+- Each round has **20 shuffled tasks** with no consecutive repeated MIDI pitch.
+  Restart creates a fresh sequence. Range/accidental changes restart the round.
+- Start with **Sharps: Off** (white keys); enable it to add black keys with explicit
+  sharp signs. There are no flat-reading exercises in this first version.
+- Play exactly the shown MIDI pitch, in the correct octave, without extra notes,
+  and hold it for 300 ms. This differs from chord training's octave-independent
+  matching. Wrong notes and extras reset the hold timer.
+- Release keys and sustained notes after success to advance. Starting/restarting
+  while notes are sounding first asks you to release them. Completion remains
+  visible until restart or exit. Progress is not saved across sessions.
+- Chord training and note practice are mutually exclusive. Switching either on
+  ends the other exercise mode. Live Chords/Notes displays remain independent.
+  Recorded preview playback never answers an exercise.
+
+The controls wrap on narrower windows. The staff panel scales to available
+height; if space is too small it asks you to enlarge the window rather than draw
+misleading clipped notation. Pause recording preview if its sound is distracting.
+
+Additional physical/UI smoke test:
+
+1. Enable Notes, play C3 and E4. Expect C3 on the bass staff, E4 on the bottom
+   treble line, and `Played: C3 E4`. Release keys/pedal and expect an empty staff.
+2. Play C4, F#4 and C2 separately. Check middle C on its ledger line below the
+   treble staff, F# in the first treble space with a sharp sign, and low C on the
+   second ledger line below the bass staff.
+3. Enable Note practice. Expect a gold target, clef/progress, no target name and
+   no target-key marker with Hint off. Hint on must reveal name/octave and marker.
+4. Try the right letter in the wrong octave, or the right note plus another key.
+   Neither may pass. The exact pitch held for 300 ms must turn green and reveal
+   its name; it must wait for release before advancing.
+5. Check Treble, Bass and Both, natural-only and sharps, restart and completion.
+   Middle C in a bass exercise must remain on the bass ledger line when matched.
+6. Start note practice while holding keys/pedal, then switch to chord training
+   and back. Check release prompts, exclusive exercise modes and the independent
+   live displays. Resize and check that controls/staves remain usable.
+
+Four additional automated tests verify reference staff positions/ledger lines,
+sharp spelling, exact pitch/extra-note rejection and hold reset, selected ranges,
+balanced mixed rounds, deterministic seeded shuffling with no immediate repeats,
+release gating, full-round completion and restart. The notation geometry was
+also visually inspected with the bundled Leland music font; desktop GUI and
+physical MIDI verification remain pending.

@@ -28,6 +28,9 @@ impl FreeplayScene {
             } else {
                 Some(TrainingSession::new(&self.live_notes.notes()))
             };
+            if self.training.is_some() {
+                self.note_practice.session = None;
+            }
         }
         if self.training.is_none() {
             return;
@@ -45,7 +48,7 @@ impl FreeplayScene {
 
         let session = self.training.as_ref().unwrap();
         let width = ctx.window_state.logical_size.width;
-        let top = controls_y + 45.0;
+        let top = self.note_controls_bottom(ctx);
         let text = if let Some(exercise) = session.exercise() {
             let feedback = match session.phase() {
                 Phase::ReleaseBeforeStart => "Release keys and sustain pedal to begin.",

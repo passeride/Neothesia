@@ -20,6 +20,7 @@ use crate::{
     utils::{BoxFuture, noop_waker_ref, window::WinitEvent},
 };
 
+mod notes;
 mod recorder;
 mod training;
 
@@ -54,6 +55,7 @@ pub struct FreeplayScene {
     nuon: nuon::Ui,
     mouse_to_midi_state: MouseToMidiEventState,
     show_chords: bool,
+    note_practice: notes::NotePractice,
     training: Option<chords::training::TrainingSession>,
     live_notes: LiveNotes,
     chord_text: String,
@@ -104,6 +106,7 @@ impl FreeplayScene {
             nuon: nuon::Ui::new(),
             mouse_to_midi_state: MouseToMidiEventState::default(),
             show_chords: false,
+            note_practice: notes::NotePractice::default(),
             training: None,
             live_notes: LiveNotes::default(),
             chord_text: String::new(),
@@ -170,6 +173,7 @@ impl FreeplayScene {
             self.update_chord_text();
         }
         self.update_training_ui(ctx);
+        self.update_note_controls(ctx);
         if !self.show_chords {
             return;
         }
@@ -252,6 +256,9 @@ impl Scene for FreeplayScene {
         self.quad_renderer_fg.clear();
 
         self.dispatch_futures(ctx);
+        if let Some(session) = &mut self.note_practice.session {
+            session.update(&self.live_notes.notes(), delta);
+        }
         if let Some(session) = &mut self.training {
             session.update(&self.live_notes.notes(), delta);
         }
@@ -272,6 +279,7 @@ impl Scene for FreeplayScene {
         self.keyboard
             .update(&mut self.quad_renderer_fg, &mut self.text_renderer);
 
+        self.update_note_panel(ctx);
         self.update_glow(delta);
 
         self.quad_renderer_bg.prepare();

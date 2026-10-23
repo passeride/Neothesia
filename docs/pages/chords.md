@@ -268,3 +268,33 @@ off, and leaving Free Play during playback. Repeat through the synth and the
 intended MIDI output. Only your played input should answer tasks or be recorded.
 Two automated reference-playback tests verify note/chord deadlines, one-time
 NoteOff, replay cancellation, deduplication and invalid-note filtering.
+
+## Stacked chord notation
+
+Chord **Training** automatically shows staff notation below its task card,
+even with the ordinary Notes display off. The gold target notes are stacked at
+one horizontal position on each staff, like a written piano chord; they turn
+green when the answer is correct. Your sounding notes appear as a separate white
+stack beside the target. Suggested notes below middle C use the bass staff; the
+others use treble. The existing suggested voicing, answer matching, keyboard
+markers and reference sound are unchanged.
+
+Each stack has a shared stem per staff. Adjacent noteheads are offset to opposite
+sides of the stem to avoid overlap, and close accidentals use separate columns.
+Chord tasks use their existing sharp/flat preference, including Bb and Eb.
+The staff-size controls also work when only chord training is active. At narrow
+width/high zoom the target is retained while played notes that do not fit remain
+listed in the footer. The same C2–C6 notation range applies.
+
+**Only chord training uses stacked notation.** Single-note practice and ordinary
+live Notes retain the existing horizontal spacing and behavior. Note-reading
+hints, continuous generation and optional reference playback are unaffected.
+
+Desktop check: enable chord training with Notes off and verify C, Cmaj7 and Bb
+show stacked target notes with correct ledger lines/flat signs. Play a chord and
+an inversion; check the separate white stack and green success state. Test close
+notes and staff zoom. Turn chord training off and return to Note practice and live
+Notes; verify their original layout and behavior. The chord-layout test covers
+triads, octave/input deduplication, adjacent heads, accidental columns, flat
+spelling, bass/treble division and notation-range filtering. Stack geometry was
+visually inspected with the bundled music font; full desktop testing is pending.

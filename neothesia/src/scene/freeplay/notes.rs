@@ -2,7 +2,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use neothesia_core::{
     chords::{
-        notes::{Clef, NoteTraining, PracticeRange, ledger_steps, pitch_label, staff_pitch},
+        Spelling,
+        notes::{
+            Clef, NoteTraining, PracticeRange, chord_staff_notes, ledger_steps, pitch_label,
+            staff_pitch,
+        },
         training::Phase,
     },
     render::{QuadInstance, QuadRenderer, TextRenderer},
@@ -92,7 +96,7 @@ impl FreeplayScene {
     pub(super) fn note_control_count(&self) -> usize {
         if self.note_practice.session.is_some() {
             7
-        } else if self.note_practice.show_notes {
+        } else if self.note_practice.show_notes || self.training.is_some() {
             3
         } else {
             2
@@ -138,7 +142,10 @@ impl FreeplayScene {
                 self.restart_note_training();
             }
         }
-        if self.note_practice.show_notes || self.note_practice.session.is_some() {
+        if self.note_practice.show_notes
+            || self.note_practice.session.is_some()
+            || self.training.is_some()
+        {
             let index = if self.note_practice.session.is_some() {
                 6
             } else {
@@ -229,7 +236,7 @@ impl FreeplayScene {
     /// baseline (not a label's bounding box) to align with lines and ledger lines.
     pub(super) fn update_note_panel(&mut self, ctx: &Context) {
         let practice = &self.note_practice;
-        if !practice.show_notes && practice.session.is_none() {
+        if !practice.show_notes && practice.session.is_none() && self.training.is_none() {
             return;
         }
         let top =
@@ -244,17 +251,28 @@ impl FreeplayScene {
                 .build(&mut self.nuon);
             return;
         }
+        let chord = self.training.as_ref().and_then(|s| s.exercise());
+        let stacked = self.training.is_some();
         let requested_scale = f32::from(practice.zoom_percent) / 100.0;
-        let scale = (available / 280.0).min(requested_scale);
+        let mut scale = (available / 280.0).min(requested_scale);
+        if stacked {
+            scale = scale.min((width - 30.0) / 135.0);
+        }
         // Enlarge notation without letting headings/feedback overwhelm the staff.
         let text_scale = scale.min(1.25);
         let target = practice.session.as_ref().map(|s| s.target());
         let correct = practice
             .session
             .as_ref()
-            .is_some_and(|s| s.phase() == Phase::Correct);
+            .is_some_and(|s| s.phase() == Phase::Correct)
+            || self
+                .training
+                .as_ref()
+                .is_some_and(|s| s.phase() == Phase::Correct);
         let mut heading = if let Some(s) = &practice.session {
             format!("Note practice - {}", s.target().clef.label())
+        } else if let Some(exercise) = chord {
+            format!("Chord notation - {}", exercise.symbol)
         } else {
             "Live notes - treble (G) and bass (F)".to_owned()
         };
@@ -284,6 +302,8 @@ impl FreeplayScene {
                     }
                 }
             }
+        } else if chord.is_some() {
+            "Gold: target chord. White: your played chord.".to_owned()
         } else {
             "White notes show the keys currently sounding. C4 = middle C.".to_owned()
         };
@@ -340,6 +360,22 @@ impl FreeplayScene {
                 [225, 225, 235],
             );
         }
+        if let Some(exercise) = chord {
+            draw_chord(
+                &mut self.quad_renderer_fg,
+                &mut self.text_renderer,
+                top,
+                left + 90.0 * scale,
+                exercise.notes,
+                exercise.spelling,
+                scale,
+                if correct {
+                    [80, 210, 120]
+                } else {
+                    [255, 195, 65]
+                },
+            );
+        }
         if let Some(t) = target {
             draw_note(
                 &mut self.quad_renderer_fg,
@@ -361,31 +397,48 @@ impl FreeplayScene {
         }
         let live = self.live_notes.notes();
         // Account for enlarged noteheads, accidentals and spacing at higher zoom.
-        let max_notes =
-            ((((width - 30.0) / scale - 163.0) / 28.0).floor().max(0.0) as usize).min(12);
+        let max_notes = if stacked {
+            if width - 30.0 >= 245.0 * scale { 12 } else { 0 }
+        } else {
+            ((((width - 30.0) / scale - 163.0) / 28.0).floor().max(0.0) as usize).min(12)
+        };
         let displayable: Vec<_> = live
             .iter()
             .copied()
             .filter(|n| (36..=84).contains(n))
             .collect();
-        for (i, n) in displayable.iter().take(max_notes).enumerate() {
-            let x = left + 150.0 * scale + i as f32 * 28.0 * scale;
-            draw_note(
+        if stacked {
+            let played: Vec<_> = displayable.iter().take(max_notes).copied().collect();
+            draw_chord(
                 &mut self.quad_renderer_fg,
                 &mut self.text_renderer,
                 top,
-                x,
-                *n,
-                if let Some(t) = target.filter(|t| t.midi == *n) {
-                    t.clef
-                } else if *n < 60 {
-                    Clef::Bass
-                } else {
-                    Clef::Treble
-                },
+                left + 210.0 * scale,
+                &played,
+                chord.map(|e| e.spelling).unwrap_or_default(),
                 scale,
                 [225, 225, 235],
             );
+        } else {
+            for (i, n) in displayable.iter().take(max_notes).enumerate() {
+                let x = left + 150.0 * scale + i as f32 * 28.0 * scale;
+                draw_note(
+                    &mut self.quad_renderer_fg,
+                    &mut self.text_renderer,
+                    top,
+                    x,
+                    *n,
+                    if let Some(t) = target.filter(|t| t.midi == *n) {
+                        t.clef
+                    } else if *n < 60 {
+                        Clef::Bass
+                    } else {
+                        Clef::Treble
+                    },
+                    scale,
+                    [225, 225, 235],
+                );
+            }
         }
         let names = live
             .iter()
@@ -522,5 +575,87 @@ fn draw_note(
         );
     } else {
         quad(quads, x, y, scale, 30.0 * scale, rgba);
+    }
+}
+
+/// Chord-only stack with one shared stem per staff. Single-note drawing above
+/// remains unchanged; seconds move to the other side of the common stem.
+#[allow(clippy::too_many_arguments)]
+fn draw_chord(
+    quads: &mut QuadRenderer,
+    text: &mut TextRenderer,
+    top: f32,
+    x: f32,
+    notes: &[u8],
+    spelling: Spelling,
+    scale: f32,
+    color: [u8; 3],
+) {
+    let layout = chord_staff_notes(notes, spelling);
+    let rgba = [
+        color[0] as f32 / 255.0,
+        color[1] as f32 / 255.0,
+        color[2] as f32 / 255.0,
+        1.0,
+    ];
+    for clef in [Clef::Treble, Clef::Bass] {
+        let group: Vec<_> = layout.iter().filter(|n| n.clef == clef).collect();
+        let (Some(first), Some(last)) = (group.first(), group.last()) else {
+            continue;
+        };
+        let up = first.step + last.step < 8;
+        let bottom = top + if clef == Clef::Treble { 115.0 } else { 215.0 } * scale;
+        let left_shift = if !up && group.iter().any(|n| n.head_column > 0) {
+            13.0
+        } else {
+            0.0
+        };
+        for note in &group {
+            let head_x =
+                x + f32::from(note.head_column) * 13.0 * scale * if up { 1.0 } else { -1.0 };
+            let y = bottom - note.step as f32 * 5.0 * scale;
+            for step in ledger_steps(note.step) {
+                quad(
+                    quads,
+                    head_x - 4.0 * scale,
+                    bottom - step as f32 * 5.0 * scale,
+                    21.0 * scale,
+                    scale,
+                    [0.7, 0.7, 0.75, 1.0],
+                );
+            }
+            if let Some(accidental) = note.accidental {
+                glyph(
+                    text,
+                    x - (left_shift + 13.0 + note.accidental_column as f32 * 14.0) * scale,
+                    y,
+                    40.0 * scale,
+                    if accidental == Spelling::Flats {
+                        icons::sheet::accidental_flat()
+                    } else {
+                        icons::sheet::accidental_sharp()
+                    },
+                    color,
+                );
+            }
+            glyph(
+                text,
+                head_x,
+                y,
+                40.0 * scale,
+                icons::sheet::notehead_black(),
+                color,
+            );
+        }
+        let high_y = bottom - last.step as f32 * 5.0 * scale;
+        let low_y = bottom - first.step as f32 * 5.0 * scale;
+        quad(
+            quads,
+            if up { x + 12.0 * scale } else { x },
+            if up { high_y - 30.0 * scale } else { high_y },
+            scale,
+            low_y - high_y + 30.0 * scale,
+            rgba,
+        );
     }
 }

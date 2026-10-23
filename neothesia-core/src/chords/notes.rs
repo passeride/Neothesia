@@ -84,6 +84,62 @@ pub fn ledger_steps(step: i16) -> Vec<i16> {
     }
 }
 
+/// Chord-only engraving: common horizontal position, with displaced seconds
+/// and independent accidental columns to keep close notes readable.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ChordStaffNote {
+    pub clef: Clef,
+    pub step: i16,
+    pub head_column: u8,
+    pub accidental: Option<Spelling>,
+    pub accidental_column: usize,
+}
+
+pub fn chord_staff_notes(notes: &[u8], spelling: Spelling) -> Vec<ChordStaffNote> {
+    let mut notes: Vec<_> = notes
+        .iter()
+        .copied()
+        .filter(|n| (36..=84).contains(n))
+        .collect();
+    notes.sort_unstable();
+    notes.dedup();
+    let mut result: Vec<ChordStaffNote> = Vec::new();
+    let mut accidental_columns: Vec<(Clef, i16, usize)> = Vec::new();
+    for midi in notes {
+        let clef = if midi < 60 { Clef::Bass } else { Clef::Treble };
+        let pitch = staff_pitch(midi, clef);
+        let step = pitch.step
+            + if pitch.sharp && spelling == Spelling::Flats {
+                1
+            } else {
+                0
+            };
+        let head_column = u8::from(
+            result
+                .last()
+                .is_some_and(|p| p.clef == clef && step - p.step <= 1 && p.head_column == 0),
+        );
+        let accidental = pitch.sharp.then_some(spelling);
+        let mut accidental_column = 0;
+        if accidental.is_some() {
+            while accidental_columns.iter().any(|(c, s, column)| {
+                *c == clef && *column == accidental_column && (step - s).abs() < 7
+            }) {
+                accidental_column += 1;
+            }
+            accidental_columns.push((clef, step, accidental_column));
+        }
+        result.push(ChordStaffNote {
+            clef,
+            step,
+            head_column,
+            accidental,
+            accidental_column,
+        });
+    }
+    result
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct NoteTarget {
     pub midi: u8,
@@ -249,6 +305,25 @@ mod tests {
         assert!(ledger_steps(-1).is_empty());
         assert_eq!(pitch_label(60), "C4");
         assert_eq!(pitch_label(0), "C-1");
+    }
+    #[test]
+    fn chord_stacks_use_seconds_and_separate_accidentals() {
+        let triad = chord_staff_notes(&[67, 60, 64, 60], Spelling::Sharps);
+        assert_eq!(triad.iter().map(|n| n.step).collect::<Vec<_>>(), [-2, 0, 2]);
+        assert!(triad.iter().all(|n| n.head_column == 0));
+        let close = chord_staff_notes(&[60, 62, 64, 66, 68], Spelling::Sharps);
+        assert_eq!(
+            close.iter().map(|n| n.head_column).collect::<Vec<_>>(),
+            [0, 1, 0, 1, 0]
+        );
+        assert_eq!(close[3].accidental_column, 0);
+        assert_eq!(close[4].accidental_column, 1);
+        let flat = chord_staff_notes(&[58, 62, 65], Spelling::Flats);
+        assert_eq!(flat[0].clef, Clef::Bass);
+        assert_eq!(flat[0].step, 9); // Bb3, in the space above the bass staff.
+        assert_eq!(flat[0].accidental, Some(Spelling::Flats));
+        assert_eq!(flat[1].clef, Clef::Treble);
+        assert!(chord_staff_notes(&[0, 127, 255], Spelling::Sharps).is_empty());
     }
     #[test]
     fn continuous_sequences_cover_ranges_and_alternate_clefs() {

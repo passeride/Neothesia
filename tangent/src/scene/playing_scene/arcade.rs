@@ -25,10 +25,10 @@ pub(crate) fn compile(
 ) -> Result<Compiled, String> {
     if let Some(path) = &song.source_path {
         let meta = std::fs::metadata(path)
-            .map_err(|_| "The MIDI file is unavailable. Return to the gallery and reload it.")?;
+            .map_err(|_| "The source file is unavailable. Return to the gallery and reload it.")?;
         if meta.len() != song.source_bytes || modified(meta.modified().ok()) != song.source_modified
         {
-            return Err("The MIDI file changed. Return to the gallery and reload it before starting Arcade.".into());
+            return Err("The source file changed. Return to the gallery and reload it before starting Arcade.".into());
         }
     }
     if !(250..=2000).contains(&speed) {
@@ -769,6 +769,31 @@ pub(super) fn button(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn musicxml_compiles_into_arcade_without_retriggering_a_tie() {
+        let xml = include_str!("../../../../midi-file/tests/fixtures/piano-study.musicxml");
+        let file = midi_file::musicxml::import(xml, "study.musicxml".into()).unwrap();
+        let mut song = Song::new(file);
+        for t in &mut song.config.tracks {
+            t.player = PlayerConfig::Human;
+        }
+        let run = compile(&song, 1000, 21..=108).unwrap();
+        assert_eq!(run.chart.target_count(), 5);
+        let upper = run
+            .chart
+            .targets()
+            .iter()
+            .filter(|t| t.pitch == 73)
+            .collect::<Vec<_>>();
+        assert_eq!(upper.len(), 1);
+        assert_eq!(upper[0].at, 500_000);
+        let mut judge = Judge::new(run.chart.clone());
+        for target in run.chart.targets() {
+            assert!(judge.attack(target.at, target.pitch));
+        }
+        judge.advance(run.chart.end() + 150_001);
+        assert_eq!(judge.score(), 1_000_000);
+    }
     #[test]
     fn calibration_corrects_delayed_input_with_a_positive_offset() {
         assert_eq!(

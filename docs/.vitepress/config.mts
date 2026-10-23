@@ -19,6 +19,7 @@ export default defineConfig({
         items: [
           { text: "Installation", link: "/pages/installation" },
           { text: "Shortcuts", link: "/pages/shortcuts" },
+          { text: "MusicXML import", link: "/pages/musicxml" },
           { text: "MIDI Library", link: "/pages/midi-library" },
           { text: "Arcade", link: "/pages/arcade" },
           { text: "Formats & roadmap", link: "/plans/formats-and-learning" },

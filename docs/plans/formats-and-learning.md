@@ -36,7 +36,7 @@ MIDI-tone 61 kan for eksempel være ciss eller dess. En eventuell toneartsangive
 - Taktmarkeringene beregnes foreløpig i grupper på fire firedeler i `midi-file/src/file.rs`. En taktartsangivelse i filen er dermed ikke full støtte for andre taktarter i appen. Toneartsbasert stavemåte er heller ikke en komplett importfunksjon.
 - Uavhengige sekvenser i SMF type 2 trenger eksplisitt håndtering. At parseren kan lese filen, er ikke dokumentert støtte for å spille sekvensene korrekt; de skal ikke behandles som samtidige spor ved en framtidig støttekontrakt.
 - Arcade bruker originalarrangementet med manuelt sporvalg. Bare anslag vurderes. NoteOff, sustainlengde og pedalteknikk gir ikke poeng.
-- MusicXML, Tangent-manifest og vanskelighetspakker er **ikke implementert**. Dagens Staff-visning er en generert visning, ikke en full notetrykkmotor.
+- En første [MusicXML/MXL-import for piano](../pages/musicxml.md) er implementert for en avgrenset delmengde. Den gir avspilling og Arcade, og beholder XML og skrevne notedata. Staff-visningen er fortsatt generert fra avspillingsdata; full notegjengivelse, Tangent-manifest og vanskelighetspakker gjenstår.
 
 Se [Arcade-guiden](../pages/arcade.md) for gjeldende regler og [Arcade-planen](arcade-mode.md) for detaljer om poeng og presentasjon.
 
@@ -46,8 +46,8 @@ Se [Arcade-guiden](../pages/arcade.md) for gjeldende regler og [Arcade-planen](a
 | --- | --- | --- |
 | Standard MIDI Files: `.mid`, `.midi` | Behold som grunnformat | Prioriter eksplisitt og testet støtte for SMF type 0 og 1 med metrisk timing. Kartlegg og meld øvrige begrensninger tydelig. |
 | `song.tangent.json` med vanlige MIDI-filer | Neste innholdsformat | Åpen, versjonert metadatafil med navngitte arrangementer, nivåer, deler/hender og omslag. Erstatter ikke MIDI. |
-| MusicXML: `.musicxml`, samt `.xml` identifisert som MusicXML | Planlagt notasjonsimport | Bevar skrevet tonehøyde, pauser, stemmer, notelinjer, taktart, toneart og relevante notasjonselementer. Start med en dokumentert pianodelmengde. [2][3] |
-| Komprimert MusicXML: `.mxl` | Del av MusicXML-arbeidet | Les standardens ZIP-container og `META-INF/container.xml`. En `.mxl` er ikke en vilkårlig ZIP-fil med nytt navn. [4] |
+| MusicXML: `.musicxml`, samt `.xml` identifisert som MusicXML | Første avgrensede avspillingsimport implementert; notasjonsrendering gjenstår | Bevar skrevet tonehøyde, pauser, stemmer, notelinjer, taktart, toneart og relevante notasjonselementer. Start med en dokumentert pianodelmengde. [2][3] |
+| Komprimert MusicXML: `.mxl` | Første containerimport implementert | Les standardens ZIP-container og `META-INF/container.xml`. En `.mxl` er ikke en vilkårlig ZIP-fil med nytt navn. [4] |
 | MusicXML opus/samlinger | Senere vurdering | Kan samle flere partiturer, men vi må fortsatt erklære hvilke som er nivåer av samme stykke. Ingen automatisk Easy/Hard-tolkning. |
 | ZIP for distribusjon av Tangent-mapper | Senere, etter stabilt manifest | Pakk eksisterende filer; ikke lag en ny koding av noter. Filendelse og distribusjonskontrakt er ikke fastlagt. |
 | `.synthesia`, MEI og andre piano-/notasjonsformater | Ikke prioritert | Kan vurderes ved konkrete behov. Ingen lovet importer. |
@@ -73,7 +73,7 @@ Titler, omslag og filplassering skal ikke alene nullstille en rekord. Endringer 
 
 MusicXML er laget for utveksling av skrevet musikk. Det kan bevare opplysninger som en vanlig MIDI-note ikke uttrykker, blant annet diatonisk navn og fortegn, stemmer og notelinjer. Det gjør formatet til riktig retning for bedre notelesing, men løser ikke layout eller avspilling automatisk. [2][3]
 
-Første import skal avgrenses til vanlig pianonotasjon: toner, akkorder, pauser, noteverdier, bindebuer, stemmer, to notelinjer, nøkler, taktart, toneart og tempo. Repetisjoner, opptakter og tupleter må enten håndteres korrekt eller gi en tydelig begrensning før de brukes til poeng. Ingen stille tap av elementer som påvirker tonehøyde, rekkefølge eller timing. Visuelle elementer som ikke støttes må opplyses om.
+Første import er levert som en avgrenset avspillingsimport; nøkler og toneart beholdes foreløpig i kilde-XML, mens strukturert notasjonsmodell og rendering gjenstår. Målbildet er vanlig pianonotasjon: toner, akkorder, pauser, noteverdier, bindebuer, stemmer, to notelinjer, nøkler, taktart, toneart og tempo. Repetisjoner, opptakter og tupleter må enten håndteres korrekt eller gi en tydelig begrensning før de brukes til poeng. Ingen stille tap av elementer som påvirker tonehøyde, rekkefølge eller timing. Visuelle elementer som ikke støttes må opplyses om.
 
 Importer skal levere til en felles intern modell, med kildehenvisninger for hver note. MIDI gir framføringshendelser; MusicXML gir musikalsk struktur og kan senere generere en avspillingsplan. Når begge følger samme arrangement, må koblingen valideres gjennom blant annet repetisjoner og tempokart. Ikke anta at første XML-note svarer til første MIDI-note, eller vurder spilleren mot et noteark som viser en annen versjon.
 

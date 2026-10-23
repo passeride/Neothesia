@@ -17,8 +17,9 @@ tangent logo without a flag.
 4. Click **Start Arcade**, then play after the three-second countdown. Match
    the exact pitch and octave. Target tracks stay visible and are not auto-played.
 
-The first implementation uses the MIDI's **Original** arrangement. Easy/Medium/
-Hard packages, MusicXML import and authored sustain scoring are later work in
+The first implementation uses the source's **Original** arrangement. The bounded
+[MusicXML piano importer](musicxml.md) also feeds the same playback/scoring pipeline. Easy/Medium/
+Hard packages and authored sustain scoring are later work in
 the [Arcade roadmap](../plans/arcade-mode.md). There is no Clone Hero importer.
 
 Empty target selections and targets outside the configured keyboard range show

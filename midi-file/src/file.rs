@@ -5,6 +5,7 @@ use std::{fs, path::Path, sync::Arc};
 #[derive(Debug, Clone)]
 pub struct MidiFile {
     pub name: String,
+    pub score: Option<Arc<crate::musicxml::Score>>,
     pub format: Format,
     pub tracks: Arc<[MidiTrack]>,
     pub program_track: ProgramTrack,
@@ -21,6 +22,18 @@ impl MidiFile {
             .to_string_lossy()
             .to_string();
 
+        if path
+            .as_ref()
+            .extension()
+            .and_then(|e| e.to_str())
+            .is_some_and(|e| {
+                ["musicxml", "xml", "mxl"]
+                    .iter()
+                    .any(|ext| e.eq_ignore_ascii_case(ext))
+            })
+        {
+            return crate::musicxml::load(path.as_ref(), name);
+        }
         let data = match fs::read(path) {
             Ok(buff) => buff,
             Err(_) => return Err(String::from("Could Not Open File")),
@@ -95,6 +108,7 @@ impl MidiFile {
 
         Ok(Self {
             name,
+            score: None,
             format: smf.header.format,
             tracks: tracks.into(),
             program_track,

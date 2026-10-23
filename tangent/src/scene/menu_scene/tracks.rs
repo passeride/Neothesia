@@ -72,7 +72,14 @@ impl super::MenuScene {
             self.state.arcade_mode = !self.state.arcade_mode;
             self.state.arcade_error = None;
         }
-        let hint = if self.state.arcade_mode {
+        let hint = if self
+            .state
+            .song
+            .as_ref()
+            .is_some_and(|s| s.file.score.is_some())
+        {
+            "MusicXML import · piano playback · Staff uses generated notation"
+        } else if self.state.arcade_mode {
             "Choose Play Along on the tracks you will play. Auto Play is backing."
         } else {
             "Choose which tracks to hear and play."
@@ -155,6 +162,11 @@ impl super::MenuScene {
                                                 }),
                                                 track,
                                                 config,
+                                                song.file
+                                                    .score
+                                                    .as_ref()
+                                                    .and_then(|s| s.track_names.get(track.track_id))
+                                                    .map(String::as_str),
                                             ) {
                                                 TrackCardEvent::PlayerConfig(player) => {
                                                     song.config.tracks[track.track_id].player =
@@ -231,6 +243,7 @@ fn track_card(
     id: impl Into<nuon::Id>,
     track: &MidiTrack,
     config: &TrackConfig,
+    source_name: Option<&str>,
 ) -> TrackCardEvent {
     let card_w = CARD_W;
     let card_h = CARD_H;
@@ -258,7 +271,7 @@ fn track_card(
         midi_file::INSTRUMENT_NAMES[instrument_id]
     };
 
-    let title = format!("{} · {title}", track.track_id + 1);
+    let title = format!("{} · {}", track.track_id + 1, source_name.unwrap_or(title));
     let (min, max) = config.pitch_range.unwrap_or((0, 0));
     let subtitle = format!(
         "{} notes · {}–{}",

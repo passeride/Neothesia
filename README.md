@@ -28,6 +28,8 @@ The upstream Flathub/AUR packages distribute Neothesia, not this Tangent fork.
 
 ## Documentation
 
+- [MusicXML piano import](docs/pages/musicxml.md) — `.musicxml`, `.xml` and `.mxl` playback, with a documented subset and generated Staff.
+
 - [Formats and learning roadmap (Norwegian)](docs/plans/formats-and-learning.md)
 - [Development blog: Tangent og den første Arcade-modusen](docs/blog/2026-10-23-tangent-arcade.md)
 - [Installation](docs/pages/installation.md)

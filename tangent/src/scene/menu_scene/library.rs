@@ -246,7 +246,7 @@ impl MenuScene {
             body,
             35.0,
             28.0,
-            "Your MIDI library",
+            "Your music library",
             false,
         );
         let busy = self.state.library.busy;
@@ -458,7 +458,7 @@ impl MenuScene {
             let (title, hint) = if l.folder.is_none() {
                 (
                     "Keep your music within reach",
-                    "Choose a folder once. Its MIDI files will appear here every time you open Tangent.",
+                    "Choose a folder once. Its MIDI and MusicXML files will appear here every time you open Tangent.",
                 )
             } else if l.catalog.entries.is_empty() {
                 (
@@ -772,7 +772,7 @@ pub(super) async fn read_song(path: PathBuf) -> Result<midi_file::MidiFile, Stri
     })
     .join()
     .await
-    .unwrap_or_else(|_| Err("MIDI loading did not finish".to_owned()))
+    .unwrap_or_else(|_| Err("Score loading did not finish".to_owned()))
 }
 pub(super) fn finish_song(
     state: &mut UiState,
@@ -786,13 +786,18 @@ pub(super) fn finish_song(
         Ok(midi) => {
             ctx.config.set_last_opened_song(Some(path.clone()));
             ctx.config.save();
+            let imported_score = midi.score.is_some();
             let mut song = Song::new(midi);
             song.set_source(path);
             state.song = Some(song);
             state.library.error = None;
             if play {
                 state.arcade_mode = false;
-                state::play(state, ctx);
+                if imported_score {
+                    state.go_to(Page::TrackSelection);
+                } else {
+                    state::play(state, ctx);
+                }
             }
         }
         Err(error) => {

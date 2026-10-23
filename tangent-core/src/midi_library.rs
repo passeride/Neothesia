@@ -64,7 +64,7 @@ impl Catalog {
                         Ok(dir) => pending.push(dir),
                         Err(_) => result.skipped += 1,
                     }
-                } else if kind.is_file() && is_midi(&path) {
+                } else if kind.is_file() && is_score_file(&path) {
                     let relative_path = path.strip_prefix(root).unwrap_or(&path).to_path_buf();
                     let metadata = item.metadata().ok();
                     result.entries.push(Entry {
@@ -105,10 +105,12 @@ impl Catalog {
         indices
     }
 }
-fn is_midi(path: &Path) -> bool {
-    path.extension()
-        .and_then(|s| s.to_str())
-        .is_some_and(|s| s.eq_ignore_ascii_case("mid") || s.eq_ignore_ascii_case("midi"))
+fn is_score_file(path: &Path) -> bool {
+    path.extension().and_then(|s| s.to_str()).is_some_and(|s| {
+        ["mid", "midi", "musicxml", "xml", "mxl"]
+            .iter()
+            .any(|ext| s.eq_ignore_ascii_case(ext))
+    })
 }
 
 #[cfg(test)]
@@ -165,6 +167,14 @@ mod tests {
         );
         assert_eq!(all.entries[1].relative_path, Path::new("Bach/Prelude.mid"));
         assert!(all.entries.iter().all(|e| e.bytes > 0));
+    }
+    #[test]
+    fn scans_musicxml_extensions_without_treating_other_formats_as_scores() {
+        let dir = Fixture::new();
+        for p in ["a.musicxml", "b.MXL", "c.xml", "d.json", "e.pdf"] {
+            dir.file(p);
+        }
+        assert_eq!(Catalog::scan(&dir.0, false).unwrap().entries.len(), 3);
     }
     #[test]
     fn rescan_observes_added_removed_and_renamed_files() {

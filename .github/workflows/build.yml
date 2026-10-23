@@ -38,9 +38,9 @@ jobs:
       - name: Test Arcade integration, records and UI input edges
         shell: bash
         run: cargo test -p tangent --bin tangent -p nuon --lib --locked
-      - name: Test MIDI tempo timeline
+      - name: Test MIDI tempo timeline and MusicXML import
         shell: bash
-        run: cargo test -p midi-file --lib --locked
+        run: cargo test -p midi-file --lib --tests --locked
       - name: Fmt
         shell: bash
         run: cargo fmt --check

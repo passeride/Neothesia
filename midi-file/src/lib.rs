@@ -1,4 +1,5 @@
 mod file;
+pub mod musicxml;
 pub mod playback;
 pub mod program_track;
 pub mod tempo_track;

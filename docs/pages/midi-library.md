@@ -1,15 +1,15 @@
 # MIDI library
 
-The home screen is a folder-backed gallery of your MIDI pieces.
+The home screen is a folder-backed gallery of your MIDI and MusicXML pieces.
 
 Choose **Arcade** on a card for scored piano performance. Personal records appear
 on procedural covers with their track/speed category; see the [Arcade guide](arcade.md).
 Authored difficulty packages and custom artwork remain on the [roadmap](../plans/arcade-mode.md).
 
 1. Click **Choose folder** and select the folder where you keep your music.
-2. Tangent saves the folder immediately and lists `.mid` and `.midi` files,
+2. Tangent saves the folder immediately and lists `.mid`, `.midi`, `.musicxml`, `.xml` and `.mxl` files,
    including upper-case extensions. Subfolders are included by default.
-3. Click a piece's card to load it and start playback. **Escape** returns to the
+3. Click a piece's card to load it and start MIDI playback. MusicXML imports open track selection first, with an import notice; see [MusicXML support](musicxml.md). **Escape** returns to the
    gallery; **Tracks** and **Play** in the bottom bar remain available for the
    last selected piece.
 

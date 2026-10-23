@@ -10,6 +10,7 @@ export default defineConfig({
     nav: [
       { text: "Home", link: "/" },
       { text: "How-to", link: "/pages/installation" },
+      { text: "Blog", link: "/blog/2026-10-23-tangent-arcade" },
     ],
 
     sidebar: [

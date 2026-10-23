@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 
 mod model;
+mod visual;
+pub use visual::{Palette, Theme, VisualSettings};
 
 pub use model::ColorSchemaV1;
 use model::{
@@ -112,6 +114,14 @@ impl Config {
         Model::load().build()
     }
 
+    pub fn visuals(&self) -> VisualSettings {
+        self.appearance.visual.normalized()
+    }
+
+    pub fn set_visuals(&mut self, visual: VisualSettings) {
+        self.appearance.visual = visual.normalized();
+    }
+
     pub fn piano_range(&self) -> std::ops::RangeInclusive<u8> {
         self.keyboard_layout.range.0..=self.keyboard_layout.range.1
     }
@@ -209,7 +219,12 @@ impl Config {
     }
 
     pub fn color_schema(&self) -> &[ColorSchemaV1] {
-        &self.appearance.color_schema
+        let visual = self.visuals();
+        if visual.soft_note_colors || self.appearance.color_schema.is_empty() {
+            visual.theme.note_colors()
+        } else {
+            &self.appearance.color_schema
+        }
     }
 
     pub fn set_color_schema(&mut self, color_schema: Vec<ColorSchemaV1>) {

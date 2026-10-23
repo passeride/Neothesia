@@ -64,3 +64,11 @@ a fixed playhead or stationary pages with a moving playhead. Staff size, beat
 window and accidental spelling are adjustable. A small ring at the playhead shows
 your played pitches: green for a match, orange for a mismatch, with semitone
 distance to the nearest active target in the footer.
+
+
+**Appearance** in Settings offers Midnight, Graphite, Warm and High Contrast
+themes, soft static gradients, and restrained piano/waterfall colors. Staff
+size and background opacity are shared by practice and MIDI notation. The
+in-song Settings drawer also controls notation movement, visible beats,
+accidentals, played-note feedback, duration guides and beat grid. Preferences
+are saved automatically; exercise audio remains optional.

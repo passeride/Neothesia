@@ -25,7 +25,6 @@ pub(super) struct NotePractice {
     range: PracticeRange,
     chromatic: bool,
     hint: bool,
-    zoom_percent: u16,
 }
 impl Default for NotePractice {
     fn default() -> Self {
@@ -35,7 +34,6 @@ impl Default for NotePractice {
             range: PracticeRange::Both,
             chromatic: false,
             hint: false,
-            zoom_percent: 100,
         }
     }
 }
@@ -61,9 +59,9 @@ fn toggle(
         .size(130.0, 30.0)
         .label(label)
         .color(if active {
-            [45, 95, 145, 255]
+            ui.theme.selected
         } else {
-            [37, 35, 42, 255]
+            ui.theme.button
         })
         .border_radius([5.0; 4])
         .build(ui)
@@ -107,7 +105,7 @@ impl FreeplayScene {
         }
     }
 
-    pub(super) fn update_note_controls(&mut self, ctx: &Context) {
+    pub(super) fn update_note_controls(&mut self, ctx: &mut Context) {
         let base = if self.preview.is_some() { 125.0 } else { 80.0 };
         let width = ctx.window_state.logical_size.width;
         if toggle(
@@ -164,13 +162,15 @@ impl FreeplayScene {
                 .border_radius([5.0; 4])
                 .build(&mut self.nuon)
             {
-                self.note_practice.zoom_percent =
-                    self.note_practice.zoom_percent.saturating_sub(25).max(50);
+                let mut v = ctx.config.visuals();
+                v.staff_size = v.staff_size.saturating_sub(25).max(50);
+                ctx.config.set_visuals(v);
+                ctx.config.save();
             }
             nuon::label()
                 .pos(x + 30.0, y)
                 .size(70.0, 30.0)
-                .text(format!("Staff {}%", self.note_practice.zoom_percent))
+                .text(format!("Staff {}%", ctx.config.visuals().staff_size))
                 .build(&mut self.nuon);
             if nuon::button()
                 .id("staff_zoom_in")
@@ -180,7 +180,10 @@ impl FreeplayScene {
                 .border_radius([5.0; 4])
                 .build(&mut self.nuon)
             {
-                self.note_practice.zoom_percent = (self.note_practice.zoom_percent + 25).min(250);
+                let mut v = ctx.config.visuals();
+                v.staff_size = (v.staff_size + 25).min(250);
+                ctx.config.set_visuals(v);
+                ctx.config.save();
             }
         }
         if self.note_practice.session.is_none() {
@@ -239,6 +242,8 @@ impl FreeplayScene {
     /// Queue notation before renderer preparation. Musical glyphs use their true
     /// baseline (not a label's bounding box) to align with lines and ledger lines.
     pub(super) fn update_note_panel(&mut self, ctx: &Context) {
+        let visual = ctx.config.visuals();
+        let palette = visual.theme.palette();
         let practice = &self.note_practice;
         if !practice.show_notes && practice.session.is_none() && self.training.is_none() {
             return;
@@ -257,7 +262,7 @@ impl FreeplayScene {
         }
         let chord = self.training.as_ref().and_then(|s| s.exercise());
         let stacked = self.training.is_some();
-        let requested_scale = f32::from(practice.zoom_percent) / 100.0;
+        let requested_scale = f32::from(ctx.config.visuals().staff_size) / 100.0;
         let mut scale = (available / 280.0).min(requested_scale);
         if stacked {
             scale = scale.min((width - 30.0) / 135.0);
@@ -274,17 +279,17 @@ impl FreeplayScene {
                 .as_ref()
                 .is_some_and(|s| s.phase() == Phase::Correct);
         let mut heading = if let Some(s) = &practice.session {
-            format!("Note practice - {}", s.target().clef.label())
+            format!("Note practice · {}", s.target().clef.label())
         } else if let Some(exercise) = chord {
-            format!("Chord notation - {}", exercise.symbol)
+            format!("Chord practice · {}", exercise.symbol)
         } else {
-            "Live notes - treble (G) and bass (F)".to_owned()
+            "Live notes · Treble & bass".to_owned()
         };
         if scale + 0.01 < requested_scale {
             heading.push_str(&format!(
                 " (fitted to {:.0}%; enlarge window for {}%)",
                 scale * 100.0,
-                practice.zoom_percent
+                ctx.config.visuals().staff_size
             ));
         }
         let status = if let Some(s) = &practice.session {
@@ -311,13 +316,13 @@ impl FreeplayScene {
         } else {
             "White notes show the keys currently sounding. C4 = middle C.".to_owned()
         };
-        quad(
+        crate::scene::style::staff_panel(
             &mut self.quad_renderer_fg,
             10.0,
             top,
             width,
             280.0 * scale,
-            [0.12, 0.12, 0.15, 1.0],
+            visual,
         );
         label(
             &mut self.nuon,
@@ -348,7 +353,7 @@ impl FreeplayScene {
                     bottom - i as f32 * 10.0 * scale,
                     width - 30.0,
                     scale,
-                    [0.65, 0.65, 0.7, 1.0],
+                    neothesia_core::config::Palette::linear(palette.staff, 0.75),
                 );
             }
             let (symbol, anchor) = match clef {
@@ -361,7 +366,7 @@ impl FreeplayScene {
                 anchor,
                 40.0 * scale,
                 symbol,
-                [225, 225, 235],
+                palette.text,
             );
         }
         if let Some(exercise) = chord {
@@ -374,9 +379,9 @@ impl FreeplayScene {
                 exercise.spelling,
                 scale,
                 if correct {
-                    [80, 210, 120]
+                    palette.success
                 } else {
-                    [255, 195, 65]
+                    palette.target
                 },
             );
         }
@@ -390,9 +395,9 @@ impl FreeplayScene {
                 t.clef,
                 scale,
                 if correct {
-                    [80, 210, 120]
+                    palette.success
                 } else {
-                    [255, 195, 65]
+                    palette.target
                 },
             );
             if practice.hint || correct {
@@ -421,7 +426,7 @@ impl FreeplayScene {
                 &played,
                 chord.map(|e| e.spelling).unwrap_or_default(),
                 scale,
-                [225, 225, 235],
+                palette.text,
             );
         } else {
             for (i, n) in displayable.iter().take(max_notes).enumerate() {
@@ -440,7 +445,7 @@ impl FreeplayScene {
                         Clef::Treble
                     },
                     scale,
-                    [225, 225, 235],
+                    palette.text,
                 );
             }
         }

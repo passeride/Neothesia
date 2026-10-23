@@ -41,6 +41,8 @@ where
 }
 
 pub struct FreeplayScene {
+    settings_open: bool,
+    background: neothesia_core::render::BgPipeline,
     keyboard: Keyboard,
     guidelines: GuidelineRenderer,
 
@@ -97,6 +99,8 @@ impl FreeplayScene {
         ));
 
         Self {
+            settings_open: false,
+            background: neothesia_core::render::BgPipeline::new(&ctx.gpu),
             keyboard,
             guidelines,
             text_renderer,
@@ -108,7 +112,7 @@ impl FreeplayScene {
             nuon: nuon::Ui::new(),
             mouse_to_midi_state: MouseToMidiEventState::default(),
             show_chords: false,
-            practice_audio: practice_audio::PracticeAudio::default(),
+            practice_audio: practice_audio::PracticeAudio::new(ctx.config.visuals().practice_sound),
             note_practice: notes::NotePractice::default(),
             training: None,
             live_notes: LiveNotes::default(),
@@ -165,11 +169,11 @@ impl FreeplayScene {
                 "Chords: Off"
             })
             .color(if self.show_chords {
-                [45, 95, 145, 255]
+                self.nuon.theme.selected
             } else {
-                [37, 35, 42, 255]
+                self.nuon.theme.button
             })
-            .border_radius([5.0; 4])
+            .border_radius([8.0; 4])
             .build(&mut self.nuon)
         {
             self.show_chords = !self.show_chords;
@@ -256,6 +260,8 @@ impl FreeplayScene {
 
 impl Scene for FreeplayScene {
     fn update(&mut self, ctx: &mut Context, delta: Duration) {
+        super::style::apply(&mut self.nuon, ctx.config.visuals());
+        self.background.update(ctx.config.visuals());
         self.quad_renderer_bg.clear();
         self.quad_renderer_fg.clear();
 
@@ -301,11 +307,41 @@ impl Scene for FreeplayScene {
         );
 
         self.update_ui(ctx);
+        let width = ctx.window_state.logical_size.width;
+        if nuon::button()
+            .id("freeplay_settings")
+            .pos(width - 190.0, 0.0)
+            .size(90.0, 30.0)
+            .label(if self.settings_open {
+                "Close ×"
+            } else {
+                "Settings"
+            })
+            .build(&mut self.nuon)
+        {
+            self.settings_open = !self.settings_open;
+        }
+        if self.settings_open {
+            let previous = ctx.config.visuals();
+            super::style::drawer(ctx, &mut self.nuon, 35.0);
+            if previous.theme != ctx.config.visuals().theme
+                || previous.soft_note_colors != ctx.config.visuals().soft_note_colors
+            {
+                self.keyboard
+                    .set_pressed_by_user_colors(ctx.config.color_schema()[0].clone());
+                if let Some(preview) = &mut self.preview {
+                    preview.resize(&self.keyboard, ctx);
+                }
+            }
+            self.practice_audio
+                .sync_enabled(ctx.config.visuals().practice_sound);
+        }
 
         super::render_nuon(&mut self.nuon, &mut self.nuon_renderer, ctx);
     }
 
     fn render<'pass>(&'pass mut self, rpass: &mut wgpu_jumpstart::RenderPass<'pass>) {
+        self.background.render(rpass);
         self.quad_renderer_bg.render(rpass);
         if let Some(preview) = self.preview.as_mut() {
             preview.render(rpass);
@@ -324,6 +360,10 @@ impl Scene for FreeplayScene {
         }
 
         if event.back_mouse_pressed() || event.key_released(Key::Named(NamedKey::Escape)) {
+            if self.settings_open {
+                self.settings_open = false;
+                return;
+            }
             ctx.proxy
                 .send_event(NeothesiaEvent::MainMenu(self.song.clone()))
                 .ok();
@@ -340,6 +380,7 @@ impl Scene for FreeplayScene {
             &mut self.mouse_to_midi_state,
             ctx,
             event,
+            self.settings_open && super::style::drawer_covers_pointer(ctx, 35.0),
         );
     }
 

@@ -64,33 +64,22 @@ impl NeoBtn {
 
         let event = nuon::click_area(id).size(w, h).build(ui);
 
-        let (bg, accent) = if event.is_hovered() || event.is_pressed() {
-            (
-                nuon::Color::new_u8(9, 9, 9, 0.6),
-                nuon::Color::new_u8(56, 145, 255, 1.0),
-            )
+        let bg = if event.is_hovered() || event.is_pressed() {
+            ui.theme.hover
         } else {
-            (
-                nuon::Color::new_u8(17, 17, 17, 0.6),
-                nuon::Color::new_u8(160, 81, 255, 1.0),
-            )
+            ui.theme.button
         };
-
         nuon::quad()
             .size(w, h)
             .color(bg)
-            .border_radius([7.0; 4])
-            .build(ui);
-        nuon::quad()
-            .size(w, 7.0)
-            .y(h - 7.0)
-            .color(accent)
-            .border_radius([0.0, 0.0, 7.0, 7.0])
+            .border_radius([12.0; 4])
+            .border_color(ui.theme.border)
+            .border_width(1.0)
             .build(ui);
 
         let label = nuon::label()
             .size(self.size.width, self.size.height)
-            .font_size(30.0)
+            .font_size(24.0)
             .color(self.color);
         if self.icon.is_empty() {
             label.text(&self.label).build(ui);

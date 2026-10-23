@@ -11,8 +11,6 @@ pub struct TopBar {
     pub topbar_expand_animation: Animated<bool, Instant>,
     is_expanded: bool,
 
-    settings_animation: Animated<bool, Instant>,
-
     settings_active: bool,
 
     looper_active: bool,
@@ -27,11 +25,6 @@ impl TopBar {
                 .duration(1000.)
                 .easing(Easing::EaseOutExpo)
                 .delay(30.0),
-            settings_animation: Animated::new(false)
-                .duration(1000.)
-                .easing(Easing::EaseOutExpo)
-                .delay(30.0),
-
             is_expanded: false,
             settings_active: false,
 
@@ -39,6 +32,17 @@ impl TopBar {
             loop_start: Duration::ZERO,
             loop_end: Duration::ZERO,
         }
+    }
+
+    pub fn close_settings(&mut self) -> bool {
+        std::mem::replace(&mut self.settings_active, false)
+    }
+
+    pub fn settings_cover_pointer(&self, ctx: &Context) -> bool {
+        let w = (ctx.window_state.logical_size.width - 16.0).clamp(280.0, 420.0);
+        self.settings_active
+            && ctx.window_state.cursor_logical_position.x >= ctx.window_state.logical_size.width - w
+            && ctx.window_state.cursor_logical_position.y >= 75.0
     }
 
     pub fn is_looper_active(&self) -> bool {
@@ -68,9 +72,6 @@ impl TopBar {
         top_bar
             .topbar_expand_animation
             .transition(top_bar.is_expanded, ctx.frame_timestamp);
-        top_bar
-            .settings_animation
-            .transition(top_bar.settings_active, ctx.frame_timestamp);
 
         Self::ui(scene, ctx);
     }
@@ -97,7 +98,7 @@ impl TopBar {
 
         nuon::quad()
             .size(win_w, 30.0 + 45.0)
-            .color([37, 35, 42])
+            .color(ui.theme.surface)
             .build(ui);
 
         Self::panel_left(this, ctx, ui);
@@ -219,11 +220,10 @@ impl TopBar {
     }
 
     fn settings_panel(this: &mut PlayingScene, ctx: &mut Context, ui: &mut nuon::Ui) {
-        let width = 280.0;
-        let offset = this
-            .top_bar
-            .settings_animation
-            .animate_bool(0.0, width, ctx.frame_timestamp);
+        let width = (ctx.window_state.logical_size.width - 16.0).clamp(280.0, 420.0);
+        // Keep the scroll viewport inside the surface from the first open
+        // frame; translating a full-width viewport offscreen violates WGPU bounds.
+        let offset = width;
 
         nuon::translate()
             .x(ctx.window_state.logical_size.width - offset)
@@ -232,26 +232,41 @@ impl TopBar {
                 // Gap
                 nuon::translate().y(5.0).add_to_current(ui);
 
-                nuon::quad()
-                    .size(width, 100.0)
-                    .color([37, 35, 42])
-                    .border_radius([10.0, 0.0, 0.0, 10.0])
-                    .build(ui);
-
-                nuon::translate().x(15.0).build(ui, |ui| {
-                    nuon::settings_section(locals::playing::display())
-                        .width(width - 30.0)
-                        .build(ui, |ui, rows, _| {
-                            if nuon::settings_row_toggler()
-                                .title(locals::playing::chord_identifier())
-                                .subtitle(locals::playing::chord_identifier_subtitle())
-                                .value(ctx.config.chord_identifier())
-                                .build(ui, rows)
-                            {
-                                ctx.config
-                                    .set_chord_identifier(!ctx.config.chord_identifier());
-                            }
+                if !this.top_bar.settings_active {
+                    return;
+                }
+                let height = (ctx.window_state.logical_size.height - 90.0).max(0.0);
+                nuon::layer().overlay(true).build(ui, |ui| {
+                    nuon::quad()
+                        .size(width, height)
+                        .color(ui.theme.surface)
+                        .border_color(ui.theme.border)
+                        .border_width(1.0)
+                        .border_radius([12.0, 0.0, 0.0, 12.0])
+                        .build(ui);
+                    nuon::scroll("playback_settings_scroll")
+                        .scissor_size(width, height)
+                        .build(ui, |ui| {
+                            nuon::translate().x(12.0).add_to_current(ui);
+                            crate::scene::style::settings(ctx, ui, width - 24.0);
+                            nuon::settings_section(locals::playing::display())
+                                .width(width - 24.0)
+                                .build(ui, |ui, rows, _| {
+                                    if nuon::settings_row_toggler()
+                                        .title(locals::playing::chord_identifier())
+                                        .subtitle(locals::playing::chord_identifier_subtitle())
+                                        .value(ctx.config.chord_identifier())
+                                        .build(ui, rows)
+                                    {
+                                        ctx.config
+                                            .set_chord_identifier(!ctx.config.chord_identifier());
+                                    }
+                                });
                         });
+                    // Build after controls so the background only claims gaps.
+                    nuon::click_area("settings_drawer")
+                        .size(width, height)
+                        .build(ui);
                 });
             });
     }
@@ -379,14 +394,17 @@ impl TopBar {
                 return;
             }
 
-            let color = [255, 56, 187];
-            let white = [255; 3];
+            let color = ui.theme.accent;
+            let white = nuon::Color::WHITE;
 
             nuon::quad()
                 .x(loop_start)
                 .width(loop_end - loop_start)
                 .height(loop_h)
-                .color([255, 56, 187, 90])
+                .color(nuon::Color {
+                    a: 0.18,
+                    ..ui.theme.accent
+                })
                 .build(ui);
 
             nuon::quad()

@@ -292,7 +292,33 @@ pub struct ImageRenderElement {
     pub border_radius: [f32; 4],
 }
 
+/// Shared dark-surface colors supplied by the host application.
+#[derive(Clone, Copy)]
+pub struct Theme {
+    pub surface: Color,
+    pub button: Color,
+    pub hover: Color,
+    pub selected: Color,
+    pub accent: Color,
+    pub muted: Color,
+    pub border: Color,
+}
+impl Default for Theme {
+    fn default() -> Self {
+        Self {
+            surface: [24, 35, 49].into(),
+            button: [36, 49, 65].into(),
+            hover: [49, 65, 83].into(),
+            selected: [47, 80, 94].into(),
+            accent: [124, 189, 205].into(),
+            muted: [162, 174, 190].into(),
+            border: [255, 255, 255, 18].into(),
+        }
+    }
+}
+
 pub struct Ui {
+    pub theme: Theme,
     pub hovered: Option<Id>,
     pub active: Option<Id>,
     pub active_widget_is_still_alive: bool,
@@ -319,6 +345,7 @@ impl Default for Ui {
 impl Ui {
     pub fn new() -> Self {
         Self {
+            theme: Theme::default(),
             hovered: None,
             active: None,
             active_widget_is_still_alive: false,
@@ -615,7 +642,7 @@ impl Scroll {
                 .y(0.0)
                 .x(self.rect.size.width - w)
                 .size(w, self.rect.height())
-                .color([37, 35, 42])
+                .color(ui.theme.surface)
                 .border_radius([5.0; 4])
                 .build(ui);
 
@@ -625,9 +652,9 @@ impl Scroll {
             let res = self::click_area(self.id).size(w, h).pos(x, y).build(ui);
 
             let color = if res.is_hovered() || res.is_pressed() {
-                [87, 81, 101]
+                ui.theme.hover
             } else {
-                [74, 68, 88]
+                ui.theme.button
             };
 
             if res.is_press_start() {
@@ -673,7 +700,7 @@ impl Card {
 
         self::quad()
             .size(last.x, last.y)
-            .color([37, 35, 42])
+            .color(ui.theme.surface)
             .border_radius([5.0; 4])
             .build(ui);
 
@@ -705,8 +732,10 @@ impl RowGroup {
 
         self::quad()
             .size(last.x, last.y)
-            .color([37, 35, 42])
-            .border_radius([10.0; 4])
+            .color(ui.theme.surface)
+            .border_color(ui.theme.border)
+            .border_width(1.0)
+            .border_radius([14.0; 4])
             .build(ui);
 
         last
@@ -1117,9 +1146,9 @@ pub struct Button {
     id: Option<Id>,
     pos: Point,
     size: Size,
-    color: Color,
-    hover_color: Color,
-    preseed_color: Color,
+    color: Option<Color>,
+    hover_color: Option<Color>,
+    preseed_color: Option<Color>,
     font_color: Color,
     border_radius: [f32; 4],
     icon: &'static str,
@@ -1144,11 +1173,11 @@ impl Button {
             id: None,
             pos: Point::zero(),
             size: Size::new(50.0, 50.0),
-            color: Color::new_u8(0, 0, 0, 0.0),
-            hover_color: Color::new_u8(57, 55, 62, 1.0),
-            preseed_color: Color::new_u8(67, 65, 72, 1.0),
+            color: None,
+            hover_color: None,
+            preseed_color: None,
             font_color: Color::WHITE,
-            border_radius: [0.0; 4],
+            border_radius: [8.0; 4],
             icon: " ",
             label: Cow::Borrowed(""),
             text_justify: TextAlign::Center,
@@ -1192,17 +1221,17 @@ impl Button {
     }
 
     pub fn color(mut self, color: impl Into<Color>) -> Self {
-        self.color = color.into();
+        self.color = Some(color.into());
         self
     }
 
     pub fn hover_color(mut self, color: impl Into<Color>) -> Self {
-        self.hover_color = color.into();
+        self.hover_color = Some(color.into());
         self
     }
 
     pub fn preseed_color(mut self, color: impl Into<Color>) -> Self {
-        self.preseed_color = color.into();
+        self.preseed_color = Some(color.into());
         self
     }
 
@@ -1248,11 +1277,11 @@ impl Button {
 
     fn calc_bg_color(&self, ui: &mut Ui, id: Id) -> Color {
         if ui.active == Some(id) {
-            self.preseed_color
+            self.preseed_color.unwrap_or(ui.theme.selected)
         } else if ui.hovered == Some(id) && ui.active.is_none() {
-            self.hover_color
+            self.hover_color.unwrap_or(ui.theme.hover)
         } else {
-            self.color
+            self.color.unwrap_or(ui.theme.button)
         }
     }
 
@@ -1268,8 +1297,8 @@ impl Button {
         layer.quads.push(QuadRenderElement {
             rect,
             border_radius: self.border_radius,
-            border_color: Color::new_u8(0, 0, 0, 0.0),
-            border_width: 0.0,
+            border_color: ui.theme.border,
+            border_width: 1.0,
             color,
         });
 
@@ -1309,7 +1338,7 @@ impl Button {
                 ),
                 text_justify: self.text_justify,
                 text_align: self.text_align,
-                size: 16.0,
+                size: 14.0,
                 bold: false,
                 text: self.label.to_string(),
                 color: self.font_color,

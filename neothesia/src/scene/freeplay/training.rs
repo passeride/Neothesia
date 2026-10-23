@@ -16,11 +16,11 @@ impl FreeplayScene {
                 "Training: Off"
             })
             .color(if self.training.is_some() {
-                [45, 95, 145, 255]
+                self.nuon.theme.selected
             } else {
-                [37, 35, 42, 255]
+                self.nuon.theme.button
             })
-            .border_radius([5.0; 4])
+            .border_radius([8.0; 4])
             .build(&mut self.nuon)
         {
             self.practice_audio.reset();
@@ -41,7 +41,7 @@ impl FreeplayScene {
             .pos(300.0, controls_y)
             .size(100.0, 30.0)
             .label("Restart")
-            .border_radius([5.0; 4])
+            .border_radius([8.0; 4])
             .build(&mut self.nuon)
         {
             self.practice_audio.reset();
@@ -75,16 +75,56 @@ impl FreeplayScene {
         nuon::quad()
             .pos(10.0, top)
             .size((width - 20.0).max(0.0), 100.0)
-            .color([37, 35, 42, 240])
-            .border_radius([5.0; 4])
+            .color(self.nuon.theme.surface)
+            .border_radius([8.0; 4])
             .build(&mut self.nuon);
-        nuon::label()
-            .pos(15.0, top + 5.0)
-            .size((width - 30.0).max(0.0), 90.0)
-            .text(text)
-            .font_size(20.0)
-            .text_justify(nuon::TextAlign::Center)
-            .build(&mut self.nuon);
+        let lines: Vec<_> = text.lines().collect();
+        let title = if let Some(exercise) = session.exercise() {
+            exercise.symbol.to_owned()
+        } else {
+            "Well played".to_owned()
+        };
+        for (y, height, size, value, muted) in [
+            (
+                7.0,
+                16.0,
+                12.0,
+                format!(
+                    "CHORD PRACTICE  ·  {} / {}",
+                    session.completed().saturating_add(1).min(EXERCISES.len()),
+                    EXERCISES.len()
+                ),
+                true,
+            ),
+            (25.0, 32.0, 30.0, title, false),
+            (
+                59.0,
+                16.0,
+                14.0,
+                lines.get(1).unwrap_or(&"").to_string(),
+                true,
+            ),
+            (
+                80.0,
+                15.0,
+                12.0,
+                lines.get(2).unwrap_or(&"").to_string(),
+                true,
+            ),
+        ] {
+            nuon::label()
+                .pos(15.0, top + y)
+                .size((width - 30.0).max(0.0), height)
+                .text(value)
+                .font_size(size)
+                .text_justify(nuon::TextAlign::Center)
+                .color(if muted {
+                    self.nuon.theme.muted
+                } else {
+                    nuon::Color::WHITE
+                })
+                .build(&mut self.nuon);
+        }
 
         // Suggested voicing markers; never modify played/preview key state.
         if let Some(exercise) = session.exercise() {

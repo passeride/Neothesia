@@ -4,14 +4,16 @@ use winit::event_loop::EventLoopProxy;
 use crate::NeothesiaEvent;
 
 pub struct InputManager {
-    input: midi_io::MidiInputManager,
+    input: Option<midi_io::MidiInputManager>,
     tx: EventLoopProxy<NeothesiaEvent>,
     current_connection: Option<(midi_io::MidiInputPort, midi_io::MidiInputConnection)>,
 }
 
 impl InputManager {
     pub fn new(tx: EventLoopProxy<NeothesiaEvent>) -> Self {
-        let input = midi_io::MidiInputManager::new().unwrap();
+        let input = midi_io::MidiInputManager::new()
+            .map_err(|error| log::warn!("MIDI input unavailable: {error}"))
+            .ok();
         Self {
             input,
             tx,
@@ -20,7 +22,10 @@ impl InputManager {
     }
 
     pub fn inputs(&self) -> Vec<midi_io::MidiInputPort> {
-        self.input.inputs()
+        self.input
+            .as_ref()
+            .map(|input| input.inputs())
+            .unwrap_or_default()
     }
 
     pub fn connect_input(&mut self, port: midi_io::MidiInputPort) {

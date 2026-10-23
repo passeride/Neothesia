@@ -25,6 +25,20 @@ pub(super) struct PracticeAudio {
     connection: Option<OutputConnection>,
 }
 impl PracticeAudio {
+    pub fn new(enabled: bool) -> Self {
+        Self {
+            enabled,
+            last_prompt: None,
+            audition: Audition::default(),
+            connection: None,
+        }
+    }
+    pub(super) fn sync_enabled(&mut self, enabled: bool) {
+        if enabled != self.enabled {
+            self.enabled = enabled;
+            self.reset();
+        }
+    }
     fn send(&self, events: Vec<ReferenceEvent>) {
         if let Some(out) = &self.connection {
             for e in events {
@@ -121,7 +135,7 @@ impl FreeplayScene {
         }
     }
 
-    pub(super) fn update_practice_audio_controls(&mut self, ctx: &Context) {
+    pub(super) fn update_practice_audio_controls(&mut self, ctx: &mut Context) {
         if self.training.is_none() && self.note_practice.session.is_none() {
             return;
         }
@@ -146,14 +160,18 @@ impl FreeplayScene {
             .size(130.0, 30.0)
             .label(label)
             .color(if self.practice_audio.enabled {
-                [45, 95, 145, 255]
+                self.nuon.theme.selected
             } else {
-                [37, 35, 42, 255]
+                self.nuon.theme.button
             })
-            .border_radius([5.0; 4])
+            .border_radius([8.0; 4])
             .build(&mut self.nuon)
         {
             self.practice_audio.enabled = !self.practice_audio.enabled;
+            let mut v = ctx.config.visuals();
+            v.practice_sound = self.practice_audio.enabled;
+            ctx.config.set_visuals(v);
+            ctx.config.save();
             self.practice_audio.reset();
         }
         let (x, y) = control_pos(width, index + 1, base);
@@ -172,7 +190,7 @@ impl FreeplayScene {
             } else {
                 [255, 255, 255, 100]
             })
-            .border_radius([5.0; 4])
+            .border_radius([8.0; 4])
             .build(&mut self.nuon)
             && can_replay
             && let Some((prompt, _)) = self.practice_prompt()

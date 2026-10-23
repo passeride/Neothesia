@@ -214,12 +214,12 @@ physical MIDI verification remain pending.
 
 ## Staff size
 
-Use the **− / Staff 100% / +** control beside the note-display/practice controls
+Use the **− / Staff % / +** control beside the note-display/practice controls
 when either is enabled. Each click changes the notation size by 25 percentage
 points, from 50% to 250%. It scales staff spacing, notes, stems, clefs, sharps and
 ledger lines together, for both live notation and note practice. Changing size
 does not restart an exercise. Size is retained while switching these views in
-the same Free Play session; a new session starts at 100%.
+Settings and both notation views; the saved default starts at 125%.
 
 The panel grows to use available vertical space without covering the keyboard
 or chord display. If the requested size does not fit, it uses the largest size
@@ -236,7 +236,7 @@ check the fitted-size indication and that notes stay above the keyboard.
 ## Optional reference sound / ear practice
 
 Both **Training** and **Note practice** offer **Hear task: Off/On**. It defaults
-to Off and applies to both trainers for the current Free Play session. With it
+to Off and applies to both trainers. The choice is saved in Settings. With it
 On, each new unanswered task plays once through the selected output: the exact
 note/octave in note practice, or the displayed chord voicing played together.
 **Replay task** plays that same task again without changing progress. Playback
@@ -308,11 +308,11 @@ transport bar. This is independent of Free Play and its exercise modes.
   notes move from right to left past it.
 - **View: Pages**: notes stay in place within the current window while the blue
   playhead moves across them. At the boundary the view turns to the next window.
-- **Window** cycles through 4, 8 and 16 quarter-note beats. These are timing
+- **Settings → Visible beats** selects 4, 8 or 16 quarter-note beats. These are timing
   windows, not inferred measures or original printed pages.
-- **Staff − / % / +** scales notation from 50% to 250%, initially 125%, limited
+- **Settings → Staff size** scales notation from 50% to 250%, initially 125%, limited
   to available height and width. The effective fitted percentage is indicated.
-- **Spelling: # / b** chooses sharp or flat spellings for black keys. No key is
+- **Settings → Prefer flats** chooses flat rather than sharp spellings for black keys. No key is
   inferred. Each altered note gets an explicit accidental.
 
 Visible pitched MIDI tracks are combined on treble/bass staves, split at middle
@@ -334,7 +334,7 @@ playing C5 against C4 reports +12. For chords this compares each input with the
 nearest sounding chord tone; it does not judge chord completeness or rhythm.
 Feedback is captured at the moment you press, so it does not change when playback
 moves to the next note. Released rings remain for 650 ms; sustain and multiple
-input channels are respected. Accidentals follow Spelling. Notes outside the
+input channels are respected. Accidentals follow the Prefer flats setting. Notes outside the
 song's allocated staff area get a boundary arrow and their true pitch in the
 footer, rather than shifting the staff. Up to four pitch comparisons fit in the
 footer, with a count for additional notes; all input rings are drawn. File
@@ -346,14 +346,14 @@ map. It has no independent animation clock: pause, seek, loop, speed changes,
 play-along waiting and tempo changes therefore use the same musical position.
 The waterfall's configurable animation offset does not shift the score playhead.
 Changing views/windows/size/spelling does not alter playback or send MIDI events.
-Options last for the current song playback scene.
+These view options are saved and shared across song playback scenes.
 
 This is a **timed MIDI practice view**, not a reconstruction of a published
 score. Common whole/half/quarter/eighth/sixteenth/32nd values and single dots are
 chosen approximately from MIDI durations. It does not infer key/time signatures,
 bar structure, rests, ties, tuplets, beaming, voices or hand assignments. Tiny
 performance timing differences may produce closely spaced noteheads. Up to 512
-notes are rendered per window; dense windows show a prompt to reduce Window.
+notes are rendered per window; dense windows show a prompt to reduce Visible beats in Settings.
 The existing piano, transport, waterfall and Free Play practice remain available.
 
 Validation: five standalone score tests cover stationary page positions, moving
@@ -378,3 +378,49 @@ negative pre-roll and conversion round trips. Desktop checks:
    no rings and feedback is captured at attack rather than recolored later.
 7. Turn Score off and return to Free Play; confirm the previous note/chord
    practice layouts, hints and optional reference audio behave as before.
+
+
+## Appearance and saved preferences
+
+The main **Settings** page, Free Play Settings and the in-song Settings drawer share the same
+appearance controls. The drawer scrolls and changes the current song's view
+without restarting transport. Free Play Settings preserves exercise progress; Escape
+closes a drawer before leaving the scene. All presentation preferences save immediately to
+the existing settings file and survive restarts. Older settings files receive
+safe defaults without replacing device, volume or piano-range selections.
+
+- **Theme:** Midnight (cool blue/teal), Graphite (neutral), Warm (amber), or
+  High Contrast. All use dark surfaces with bright notation. High Contrast
+  forces an opaque staff background regardless of the transparency preference.
+- **Soft gradients:** subtle, stationary diagonal background wash; disable for
+  a flat background. There is no decorative background animation.
+- **Soft note colors:** a restrained theme palette for the piano and waterfall;
+  switch off to use the original/custom configured track colors.
+- **Staff size:** 50–250%, shared by Free Play and MIDI playback, initially 125%.
+  Fit-to-window still limits effective size. Free Play retains its quick zoom
+  buttons; MIDI playback uses Settings to keep the score toolbar compact.
+- **Staff background:** 55–100% opacity, initially 88%. Only the rounded panel
+  background is translucent; music glyphs and input markers keep their contrast.
+- **MIDI staff, Scrolling notation, Visible beats, Prefer flats:** control the
+  score's visibility, Scroll/Pages, 4/8/16-beat span and accidental spelling.
+  Score and View remain available as quick actions above the staff.
+- **Your note marker, Duration guides, Beat grid:** independently hide played
+  pitch feedback, exact-duration rails, or the quarter-note timing guides.
+- **Play exercise notes:** saved default for optional note/chord reference audio.
+  Free Play's Hear task control updates the same preference.
+
+Practice targets, matching rules and note/chord layouts remain unchanged. Colors
+are paired with pitch labels and semitone feedback so correctness does not rely
+solely on color. Themes do not infer a musical key or alter MIDI/audio timing.
+
+Desktop appearance checks:
+1. Change all four themes in Settings, restart and confirm the selection, staff
+   size, opacity, score options and exercise-audio preference are restored.
+2. Switch themes while a MIDI song plays; the waterfall, controls, staff and
+   background should update without restarting or seeking. Check Pages/Scroll.
+3. Set opacity to 55% and 100%; only the panel should change, and High Contrast
+   should remain opaque. Check duration/grid/marker toggles independently.
+4. Scroll the in-song drawer to the last row, including on a small window; no
+   settings click should play a piano key underneath the drawer.
+5. Check note practice, chord practice and live notes at 50%, 125%, 250% and in a
+   resized window. Noteheads, clefs, accidentals and ledger lines stay aligned.

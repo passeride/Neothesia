@@ -132,6 +132,17 @@ impl ScoreOverlay {
         }
     }
 
+    fn persist_controls(&self, ctx: &mut Context) {
+        let original = ctx.config.visuals();
+        let mut v = original;
+        v.score_enabled = self.enabled;
+        v.score_scroll = self.mode == ViewMode::Scrolling;
+        if v != original {
+            ctx.config.set_visuals(v);
+            ctx.config.save();
+        }
+    }
+
     fn control_pos(width: f32, index: usize) -> (f32, f32) {
         let columns = ((width - 20.0) / 135.0).floor().max(1.0) as usize;
         (
@@ -146,14 +157,14 @@ impl ScoreOverlay {
             .pos(x, y)
             .size(130.0, 30.0)
             .label(text.to_owned())
-            .color([37, 35, 42, 245])
+            .color(ui.theme.button)
             .border_radius([5.0; 4])
             .build(ui)
     }
     #[allow(clippy::too_many_arguments)]
     pub fn update(
         &mut self,
-        ctx: &Context,
+        ctx: &mut Context,
         seconds: f64,
         tempo: &TempoTrack,
         keyboard_y: f32,
@@ -161,6 +172,21 @@ impl ScoreOverlay {
         quads: &mut QuadRenderer,
         text: &mut TextRenderer,
     ) {
+        let visual = ctx.config.visuals();
+        let palette = visual.theme.palette();
+        self.enabled = visual.score_enabled;
+        self.mode = if visual.score_scroll {
+            ViewMode::Scrolling
+        } else {
+            ViewMode::Paged
+        };
+        self.zoom = visual.staff_size;
+        self.span = f64::from(visual.score_beats);
+        self.spelling = if visual.flats {
+            Spelling::Flats
+        } else {
+            Spelling::Sharps
+        };
         let width = ctx.window_state.logical_size.width;
         if Self::button(
             ui,
@@ -174,6 +200,7 @@ impl ScoreOverlay {
             },
         ) {
             self.enabled = !self.enabled;
+            self.persist_controls(ctx);
         }
         if !self.enabled {
             return;
@@ -193,67 +220,8 @@ impl ScoreOverlay {
                 ViewMode::Scrolling => ViewMode::Paged,
             };
         }
-        if Self::button(
-            ui,
-            width,
-            2,
-            "playback_score_span",
-            &format!("Window: {} beats", self.span),
-        ) {
-            self.span = if self.span == 4.0 {
-                8.0
-            } else if self.span == 8.0 {
-                16.0
-            } else {
-                4.0
-            };
-        }
-        let (x, y) = Self::control_pos(width, 3);
-        if nuon::button()
-            .id("playback_score_zoom_out")
-            .pos(x, y)
-            .size(30.0, 30.0)
-            .label("-")
-            .build(ui)
-        {
-            self.zoom = self.zoom.saturating_sub(25).max(50);
-        }
-        label(
-            ui,
-            x + 30.0,
-            y,
-            70.0,
-            30.0,
-            13.0,
-            format!("Staff {}%", self.zoom),
-        );
-        if nuon::button()
-            .id("playback_score_zoom_in")
-            .pos(x + 100.0, y)
-            .size(30.0, 30.0)
-            .label("+")
-            .build(ui)
-        {
-            self.zoom = (self.zoom + 25).min(250);
-        }
-        if Self::button(
-            ui,
-            width,
-            4,
-            "playback_score_spelling",
-            if self.spelling == Spelling::Sharps {
-                "Spelling: #"
-            } else {
-                "Spelling: b"
-            },
-        ) {
-            self.spelling = if self.spelling == Spelling::Sharps {
-                Spelling::Flats
-            } else {
-                Spelling::Sharps
-            };
-        }
-        let top = Self::control_pos(width, 4).1 + 40.0;
+        self.persist_controls(ctx);
+        let top = Self::control_pos(width, 1).1 + 42.0;
         let available = keyboard_y - top - 45.0;
         if available < 155.0 || width < 300.0 {
             label(
@@ -273,13 +241,13 @@ impl ScoreOverlay {
             .min(requested)
             .min((width - 30.0) / 180.0);
         let panel_width = width - 20.0;
-        quad(
+        crate::scene::style::staff_panel(
             quads,
             10.0,
             top,
             panel_width,
             base_height * scale,
-            [0.1, 0.11, 0.14, 1.0],
+            visual,
         );
         let beat = tempo.seconds_to_quarters(seconds);
         let window = ScoreWindow::new(beat, self.span, self.mode);
@@ -321,7 +289,7 @@ impl ScoreOverlay {
         let staff_top = staff_bottom(Clef::Treble) - 65.0 * scale;
         let staff_end = staff_bottom(Clef::Bass) + self.lower * scale + 12.0 * scale;
         for b in window.start.ceil() as i64..=window.end.floor() as i64 {
-            if b < 0 {
+            if b < 0 || !visual.beat_grid {
                 continue;
             }
             let x = left + window.fraction(b as f64) as f32 * plot_width;
@@ -331,7 +299,7 @@ impl ScoreOverlay {
                 staff_top,
                 0.75,
                 staff_end - staff_top,
-                [0.2, 0.22, 0.27, 1.0],
+                neothesia_core::config::Palette::linear(palette.staff, 0.12),
             );
             label(
                 ui,
@@ -352,7 +320,7 @@ impl ScoreOverlay {
                     bottom - i as f32 * 10.0 * scale,
                     width - 50.0,
                     scale,
-                    [0.6, 0.63, 0.7, 1.0],
+                    neothesia_core::config::Palette::linear(palette.staff, 0.75),
                 );
             }
             self.glyphs.draw(
@@ -365,7 +333,7 @@ impl ScoreOverlay {
                 } else {
                     '\u{E062}'
                 },
-                [215, 220, 235],
+                palette.text,
             );
         }
         // Same-onset/same-written-duration tones share a stem on each staff.
@@ -396,7 +364,7 @@ impl ScoreOverlay {
             let y = staff_bottom(clef) - step as f32 * 5.0 * scale;
             let x1 = left + window.fraction(note.start.max(window.start)) as f32 * plot_width;
             let x2 = left + window.fraction(note.end.min(window.end)) as f32 * plot_width;
-            if x2 > x1 {
+            if x2 > x1 && visual.duration_rails {
                 quad(
                     quads,
                     x1,
@@ -428,6 +396,7 @@ impl ScoreOverlay {
                 scale,
                 beat,
                 self.spelling,
+                palette,
             );
         }
         let cursor = left + window.cursor as f32 * plot_width;
@@ -437,7 +406,7 @@ impl ScoreOverlay {
             staff_top,
             2.0,
             staff_end - staff_top,
-            [0.3, 0.75, 1.0, 1.0],
+            neothesia_core::config::Palette::linear(palette.accent, 0.85),
         );
         // Capture correctness on attack, then retain releases briefly so even a
         // short wrong tap is readable. Sustain/multi-channel releases use LiveNotes.
@@ -451,6 +420,9 @@ impl ScoreOverlay {
             )
         };
         for (midi, mark) in self.marks.iter_mut().enumerate() {
+            if !visual.input_feedback {
+                continue;
+            }
             let Some(input) = *mark else { continue };
             if input
                 .released
@@ -469,9 +441,9 @@ impl ScoreOverlay {
             let y = actual_y.clamp(staff_top + 7.0 * scale, staff_end - 7.0 * scale);
             let outside = (y - actual_y).abs() > 0.1;
             let color = match input.feedback {
-                Some(f) if f.semitones == 0 => [80, 225, 160],
-                Some(_) => [255, 175, 75],
-                None => [100, 195, 255],
+                Some(f) if f.semitones == 0 => palette.success,
+                Some(_) => palette.warning,
+                None => palette.accent,
             };
             if !outside {
                 for ledger in ledger_steps(step) {
@@ -481,13 +453,13 @@ impl ScoreOverlay {
                         staff_bottom(clef) - ledger as f32 * 5.0 * scale,
                         18.0 * scale,
                         scale,
-                        [0.6, 0.63, 0.7, 1.0],
+                        neothesia_core::config::Palette::linear(palette.staff, 0.75),
                     );
                 }
             }
             // A ring differs from the score's filled noteheads and remains visible
             // over the blue cursor, even when the played note is an exact match.
-            draw_ring(quads, cursor, y, scale, color);
+            draw_ring(quads, cursor, y, scale, color, palette.surface);
             if pitch.sharp && !outside {
                 self.glyphs.draw(
                     text,
@@ -572,6 +544,7 @@ fn draw_group(
     scale: f32,
     beat: f64,
     spelling: Spelling,
+    palette: neothesia_core::config::Palette,
 ) {
     let clef = if notes[0].pitch < 60 {
         Clef::Bass
@@ -619,11 +592,11 @@ fn draw_group(
         0.0
     };
     let color = if notes.iter().any(|n| n.active(beat)) {
-        [80, 225, 160]
+        palette.success
     } else if notes.iter().all(|n| n.end <= beat) {
-        [135, 145, 165]
+        palette.muted
     } else {
-        [230, 232, 240]
+        palette.text
     };
     for (step, sharp, column) in &heads {
         let hx = x + if *column {
@@ -639,7 +612,7 @@ fn draw_group(
                 bottom - ledger as f32 * 5.0 * scale,
                 (head_width + 8.0) * scale,
                 scale,
-                [0.6, 0.63, 0.7, 1.0],
+                neothesia_core::config::Palette::linear(palette.staff, 0.75),
             );
         }
         if *sharp {
@@ -731,7 +704,7 @@ fn draw_dot(out: &mut QuadRenderer, x: f32, y: f32, scale: f32, color: [u8; 3]) 
     });
 }
 
-fn draw_ring(out: &mut QuadRenderer, x: f32, y: f32, scale: f32, color: [u8; 3]) {
+fn draw_ring(out: &mut QuadRenderer, x: f32, y: f32, scale: f32, color: [u8; 3], surface: [u8; 3]) {
     for (radius, color) in [
         (
             6.0,
@@ -742,7 +715,7 @@ fn draw_ring(out: &mut QuadRenderer, x: f32, y: f32, scale: f32, color: [u8; 3])
                 1.0,
             ],
         ),
-        (3.0, [0.1, 0.11, 0.14, 1.0]),
+        (3.0, neothesia_core::config::Palette::linear(surface, 1.0)),
     ] {
         out.push(neothesia_core::render::QuadInstance {
             position: [x - radius * scale, y - radius * scale],

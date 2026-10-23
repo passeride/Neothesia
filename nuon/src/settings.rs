@@ -25,13 +25,13 @@ impl SettingsSection {
         ui: &mut Ui,
         build: impl FnOnce(&mut Ui, &dyn Fn(&mut Ui, SettingsRow<'_>), &dyn Fn(&mut Ui)),
     ) {
-        let spacer_label_h = 43.0;
+        let spacer_label_h = 52.0;
 
         let spacer = |ui: &mut Ui| {
             nuon::quad()
                 .width(self.width)
                 .height(1.0)
-                .color([0; 3])
+                .color(ui.theme.border)
                 .build(ui);
             nuon::translate().y(1.0).add_to_current(ui);
         };
@@ -39,7 +39,7 @@ impl SettingsSection {
         nuon::label()
             .text(self.label)
             .size(self.width, spacer_label_h)
-            .font_size(14.6)
+            .font_size(14.0)
             .text_justify(TextAlign::Start)
             .bold(true)
             .build(ui);
@@ -141,7 +141,7 @@ impl<'a> SettingsRow<'a> {
                 nuon::label()
                     .y(y + gap + title_h)
                     .text(self.subtitle)
-                    .color([1.0, 1.0, 1.0, 0.5])
+                    .color(ui.theme.muted)
                     .text_justify(nuon::TextAlign::Start)
                     .font_size(subtitle_h)
                     .size(row_inner_w, subtitle_h)
@@ -209,11 +209,7 @@ impl<'a> SettingsRowSpin<'a> {
         add: &dyn Fn(&mut Ui, SettingsRow<'_>),
     ) -> SettingsRowSpinResult {
         fn button() -> nuon::Button {
-            nuon::button()
-                .color([74, 68, 88])
-                .preseed_color([74, 68, 88])
-                .hover_color([87, 81, 101])
-                .border_radius([16.0; 4])
+            nuon::button().border_radius([16.0; 4])
         }
 
         pub fn minus_icon() -> &'static str {
@@ -349,19 +345,19 @@ impl<'a> SettingsRowToggler<'a> {
                 if nuon::button()
                     .border_radius([8.0; 4])
                     .color(if self.value {
-                        [160, 81, 255]
+                        ui.theme.accent
                     } else {
-                        [74, 68, 88]
+                        ui.theme.button
                     })
                     .hover_color(if self.value {
-                        [170, 91, 255]
+                        ui.theme.accent
                     } else {
-                        [87, 81, 101]
+                        ui.theme.hover
                     })
                     .preseed_color(if self.value {
-                        [140, 70, 240]
+                        ui.theme.accent
                     } else {
-                        [97, 91, 111]
+                        ui.theme.selected
                     })
                     .x(row_w - w)
                     .y(nuon::center_y(row_h, h))

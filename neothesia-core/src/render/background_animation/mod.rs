@@ -1,4 +1,4 @@
-use std::time::Duration;
+use crate::config::{Palette, VisualSettings};
 
 use wgpu_jumpstart::{Gpu, Shape, Uniform, wgpu};
 
@@ -9,7 +9,7 @@ pub struct BgPipeline {
 
     fullscreen_quad: Shape,
 
-    time_uniform: Uniform<TimeUniform>,
+    time_uniform: Uniform<BackgroundUniform>,
     queue: wgpu::Queue,
 }
 
@@ -26,7 +26,7 @@ impl BgPipeline {
 
         let time_uniform = Uniform::new(
             &gpu.device,
-            TimeUniform::default(),
+            BackgroundUniform::default(),
             wgpu::ShaderStages::FRAGMENT,
         );
 
@@ -75,20 +75,35 @@ impl BgPipeline {
         render_pass.draw_indexed(0..self.fullscreen_quad.indices_len, 0, 0..1);
     }
 
-    pub fn update_time(&mut self, delta: Duration) {
-        self.time_uniform.data.time += delta.as_secs_f32();
+    pub fn update(&mut self, settings: VisualSettings) {
+        let p = settings.theme.palette();
+        self.time_uniform.data = BackgroundUniform {
+            top: Palette::linear(p.background, 1.0),
+            bottom: Palette::linear(
+                if settings.gradients {
+                    p.bottom
+                } else {
+                    p.background
+                },
+                1.0,
+            ),
+        };
         self.time_uniform.update(&self.queue);
     }
 }
 
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
-struct TimeUniform {
-    time: f32,
+struct BackgroundUniform {
+    top: [f32; 4],
+    bottom: [f32; 4],
 }
-impl Default for TimeUniform {
+impl Default for BackgroundUniform {
     fn default() -> Self {
-        // Lets move start of the animation a bit
-        Self { time: 10.0 }
+        let p = VisualSettings::default().theme.palette();
+        Self {
+            top: Palette::linear(p.background, 1.0),
+            bottom: Palette::linear(p.bottom, 1.0),
+        }
     }
 }

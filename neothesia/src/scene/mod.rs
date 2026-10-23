@@ -2,6 +2,7 @@ pub mod freeplay;
 pub mod menu_scene;
 mod notation;
 pub mod playing_scene;
+mod style;
 
 use crate::{
     NeothesiaEvent, context::Context, scene::playing_scene::Keyboard, utils::window::WinitEvent,
@@ -116,6 +117,7 @@ fn handle_mouse_to_midi_event(
     state: &mut MouseToMidiEventState,
     ctx: &Context,
     event: &WindowEvent,
+    blocked: bool,
 ) {
     if !(event.left_mouse_pressed() || event.left_mouse_released() || event.cursor_moved()) {
         return;
@@ -149,7 +151,7 @@ fn handle_mouse_to_midi_event(
         ctx.window_state.cursor_logical_position.y,
     );
 
-    if !bbox.contains(mouse_pos) || !ctx.window_state.left_mouse_btn {
+    if blocked || !bbox.contains(mouse_pos) || !ctx.window_state.left_mouse_btn {
         cancel_mouse_key_press(state, ctx);
         return;
     }
@@ -247,6 +249,13 @@ impl NuonRenderer {
 }
 
 fn handle_nuon_window_event(nuon: &mut nuon::Ui, event: &WindowEvent, ctx: &Context) {
+    if let WindowEvent::MouseWheel { delta, .. } = event {
+        let y = match delta {
+            winit::event::MouseScrollDelta::LineDelta(_, y) => y * 60.0,
+            winit::event::MouseScrollDelta::PixelDelta(p) => p.y as f32,
+        };
+        nuon.mouse_wheel(y);
+    }
     if event.cursor_moved() {
         nuon.mouse_move(
             ctx.window_state.cursor_logical_position.x,

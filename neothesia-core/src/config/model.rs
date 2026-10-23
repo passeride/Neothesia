@@ -160,6 +160,8 @@ pub struct ColorSchemaV1 {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct AppearanceConfigV1 {
+    #[serde(default)]
+    pub visual: super::VisualSettings,
     #[serde(default = "default_color_schema")]
     pub color_schema: Vec<ColorSchemaV1>,
 
@@ -187,6 +189,7 @@ pub enum AppearanceConfig {
 impl Default for AppearanceConfig {
     fn default() -> Self {
         Self::V1(AppearanceConfigV1 {
+            visual: Default::default(),
             color_schema: default_color_schema(),
             background_color: Default::default(),
             vertical_guidelines: default_vertical_guidelines(),

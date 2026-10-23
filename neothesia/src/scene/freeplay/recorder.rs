@@ -311,7 +311,7 @@ pub fn update_preview_ui(scene: &mut FreeplayScene, ctx: &mut Context) {
     nuon::translate().build(&mut scene.nuon, |ui| {
         nuon::quad()
             .size(width, top_bar_height)
-            .color([37, 35, 42])
+            .color(ui.theme.surface)
             .build(ui);
 
         nuon::translate().build(ui, |ui| {
@@ -416,10 +416,13 @@ pub fn update_preview_ui(scene: &mut FreeplayScene, ctx: &mut Context) {
                     msg = Msg::Seek;
                 }
 
-                nuon::quad().size(width, 45.0).color([37, 35, 42]).build(ui);
+                nuon::quad()
+                    .size(width, 45.0)
+                    .color(ui.theme.surface)
+                    .build(ui);
                 nuon::quad()
                     .size(width * progress, 45.0)
-                    .color([56, 145, 255])
+                    .color(ui.theme.accent)
                     .build(ui);
 
                 if !length.is_zero() {

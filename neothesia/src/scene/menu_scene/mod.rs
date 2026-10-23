@@ -317,9 +317,10 @@ impl MenuScene {
 
 impl Scene for MenuScene {
     #[profiling::function]
-    fn update(&mut self, ctx: &mut Context, delta: Duration) {
+    fn update(&mut self, ctx: &mut Context, _delta: Duration) {
         self.quad_pipeline.clear();
-        self.bg_pipeline.update_time(delta);
+        super::style::apply(&mut self.nuon, ctx.config.visuals());
+        self.bg_pipeline.update(ctx.config.visuals());
         self.state.tick(ctx);
 
         self.futures

@@ -64,11 +64,7 @@ impl RangeDetection {
 }
 
 fn button() -> nuon::Button {
-    nuon::button()
-        .color([74, 68, 88])
-        .preseed_color([74, 68, 88])
-        .hover_color([87, 81, 101])
-        .border_radius([5.0; 4])
+    nuon::button().border_radius([8.0; 4])
 }
 
 fn setting_row_button(row_w: f32, row_h: f32) -> nuon::Button {
@@ -115,7 +111,7 @@ impl super::MenuScene {
         });
 
         let margin_top = 40.0;
-        let body_w = 650.0;
+        let body_w = (win_w - 32.0).clamp(280.0, 720.0);
 
         nuon::scroll("settings_scroll")
             .scissor_size(win_w, (win_h - bottom_bar_h).max(0.0))
@@ -124,6 +120,15 @@ impl super::MenuScene {
                     .x(nuon::center_x(win_w, body_w))
                     .add_to_current(ui);
                 nuon::translate().y(margin_top).add_to_current(ui);
+
+                nuon::label()
+                    .text("Settings")
+                    .font_size(28.0)
+                    .text_justify(TextAlign::Start)
+                    .size(body_w, 40.0)
+                    .build(ui);
+                nuon::translate().y(44.0).add_to_current(ui);
+                crate::scene::style::settings(ctx, ui, body_w);
 
                 nuon::settings_section(locals::settings::output())
                     .width(body_w)
@@ -232,7 +237,7 @@ impl super::MenuScene {
         row_w: f32,
         row_h: f32,
     ) {
-        let btn_w = 320.0;
+        let btn_w = (row_w - 90.0).clamp(120.0, 320.0);
         let btn_h = 31.0;
 
         let btn_x = row_w - btn_w;
@@ -360,7 +365,7 @@ impl super::MenuScene {
         row_w: f32,
         row_h: f32,
     ) {
-        let btn_w = 320.0;
+        let btn_w = (row_w - 90.0).clamp(120.0, 320.0);
         let btn_h = 31.0;
 
         let btn_x = row_w - btn_w;

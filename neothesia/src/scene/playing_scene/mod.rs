@@ -33,6 +33,7 @@ mod score_overlay;
 mod top_bar;
 
 pub struct PlayingScene {
+    background: neothesia_core::render::BgPipeline,
     keyboard: Keyboard,
     waterfall: WaterfallRenderer,
     guidelines: GuidelineRenderer,
@@ -115,6 +116,7 @@ impl PlayingScene {
         ));
 
         Self {
+            background: neothesia_core::render::BgPipeline::new(&ctx.gpu),
             keyboard,
             guidelines,
             note_labels,
@@ -228,6 +230,8 @@ impl PlayingScene {
 impl Scene for PlayingScene {
     #[profiling::function]
     fn update(&mut self, ctx: &mut Context, delta: Duration) {
+        super::style::apply(&mut self.nuon, ctx.config.visuals());
+        self.background.update(ctx.config.visuals());
         self.quad_renderer_bg.clear();
         self.quad_renderer_fg.clear();
 
@@ -258,7 +262,17 @@ impl Scene for PlayingScene {
 
         self.update_glow(delta);
 
+        let previous_visual = ctx.config.visuals();
         TopBar::update(self, ctx);
+        let current_visual = ctx.config.visuals();
+        if previous_visual.theme != current_visual.theme
+            || previous_visual.soft_note_colors != current_visual.soft_note_colors
+        {
+            self.waterfall
+                .resize(&ctx.config, self.keyboard.layout().clone());
+        }
+        self.keyboard
+            .set_pressed_by_user_colors(ctx.config.color_schema()[0].clone());
         let score_seconds = self.player.time().as_secs_f64() - self.player.leed_in().as_secs_f64();
         self.score_overlay.update(
             ctx,
@@ -310,6 +324,7 @@ impl Scene for PlayingScene {
 
     #[profiling::function]
     fn render<'pass>(&'pass mut self, rpass: &mut wgpu_jumpstart::RenderPass<'pass>) {
+        self.background.render(rpass);
         self.quad_renderer_bg.render(rpass);
         self.waterfall.render(rpass);
         if let Some(note_labels) = self.note_labels.as_mut() {
@@ -333,6 +348,9 @@ impl Scene for PlayingScene {
         }
 
         if event.back_mouse_pressed() || event.key_released(Key::Named(NamedKey::Escape)) {
+            if self.top_bar.close_settings() {
+                return;
+            }
             ctx.proxy
                 .send_event(NeothesiaEvent::MainMenu(Some(self.player.song().clone())))
                 .ok();
@@ -349,6 +367,7 @@ impl Scene for PlayingScene {
             &mut self.mouse_to_midi_state,
             ctx,
             event,
+            self.top_bar.settings_cover_pointer(ctx),
         );
 
         if event.window_resized() || event.scale_factor_changed() {

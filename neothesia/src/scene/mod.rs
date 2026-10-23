@@ -1,5 +1,6 @@
 pub mod freeplay;
 pub mod menu_scene;
+mod notation;
 pub mod playing_scene;
 
 use crate::{

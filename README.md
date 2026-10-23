@@ -58,3 +58,7 @@ correct answer.
 Enable **Notes** for live treble/bass staff notation, or **Note practice** to learn
 reading individual notes. Choose treble, bass or both, optional sharps, and hints.
 Single-note practice continues without a score or ending and requires the correct octave.
+
+Normal MIDI playback also has a **Score** overlay: choose scrolling notation with
+a fixed playhead or stationary pages with a moving playhead. Staff size, beat
+window and accidental spelling are adjustable.

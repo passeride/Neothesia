@@ -8,6 +8,7 @@ pub mod chords;
 pub mod config;
 pub mod font_system;
 pub mod render;
+pub mod score;
 pub mod utils;
 
 pub use euclid;

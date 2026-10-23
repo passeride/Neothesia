@@ -29,6 +29,7 @@ mod toast_manager;
 use toast_manager::ToastManager;
 
 mod animation;
+mod score_overlay;
 mod top_bar;
 
 pub struct PlayingScene {
@@ -53,6 +54,7 @@ pub struct PlayingScene {
     deduced_chord_name: String,
 
     top_bar: TopBar,
+    score_overlay: score_overlay::ScoreOverlay,
 }
 
 impl PlayingScene {
@@ -94,6 +96,7 @@ impl PlayingScene {
             ctx.text_renderer_factory.new_renderer(),
         ));
 
+        let score_overlay = score_overlay::ScoreOverlay::new(&song);
         let player = MidiPlayer::new(
             ctx.output_manager.connection().clone(),
             song,
@@ -131,6 +134,7 @@ impl PlayingScene {
             deduced_chord_name: String::new(),
 
             top_bar: TopBar::new(),
+            score_overlay,
         }
     }
 
@@ -255,6 +259,16 @@ impl Scene for PlayingScene {
         self.update_glow(delta);
 
         TopBar::update(self, ctx);
+        let score_seconds = self.player.time().as_secs_f64() - self.player.leed_in().as_secs_f64();
+        self.score_overlay.update(
+            ctx,
+            score_seconds,
+            &self.player.song().file.tempo_track,
+            self.keyboard.pos().y,
+            &mut self.nuon,
+            &mut self.quad_renderer_fg,
+            &mut self.text_renderer,
+        );
 
         if ctx.config.chord_identifier() {
             nuon::label()

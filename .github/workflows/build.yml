@@ -18,6 +18,8 @@ jobs:
         run: |
           rustc --edition=2024 --test neothesia-core/src/chords/mod.rs -o /tmp/chord-tests
           /tmp/chord-tests
+          rustc --edition=2024 --test neothesia-core/src/score.rs -o /tmp/score-tests
+          /tmp/score-tests
 
   lints:
     runs-on: ubuntu-latest
@@ -26,6 +28,9 @@ jobs:
       - name: Install alsa
         shell: bash
         run: sudo apt update && sudo apt install libasound2-dev libavcodec-dev libavformat-dev libswscale-dev nasm
+      - name: Test MIDI tempo timeline
+        shell: bash
+        run: cargo test -p midi-file --lib --locked
       - name: Fmt
         shell: bash
         run: cargo fmt --check

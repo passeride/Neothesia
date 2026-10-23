@@ -9,11 +9,15 @@ use neothesia_core::{
         },
         training::Phase,
     },
-    render::{QuadInstance, QuadRenderer, TextRenderer},
+    render::{QuadRenderer, TextRenderer},
 };
 
 use super::FreeplayScene;
-use crate::{context::Context, icons};
+use crate::{
+    context::Context,
+    icons,
+    scene::notation::{glyph, label, quad},
+};
 
 pub(super) struct NotePractice {
     pub show_notes: bool,
@@ -488,34 +492,6 @@ impl FreeplayScene {
     }
 }
 
-fn quad(out: &mut QuadRenderer, x: f32, y: f32, w: f32, h: f32, color: [f32; 4]) {
-    out.push(QuadInstance {
-        position: [x, y],
-        size: [w, h],
-        color,
-        ..Default::default()
-    });
-}
-fn label(ui: &mut nuon::Ui, x: f32, y: f32, w: f32, h: f32, size: f32, text: String) {
-    nuon::label()
-        .pos(x, y)
-        .size(w, h)
-        .font_size(size)
-        .text(text)
-        .text_justify(nuon::TextAlign::Center)
-        .build(ui);
-}
-fn glyph(out: &mut TextRenderer, x: f32, baseline: f32, size: f32, text: &str, color: [u8; 3]) {
-    let buffer = TextRenderer::gen_buffer_with_attr(
-        size,
-        text,
-        cosmic_text::Attrs::new()
-            .family(cosmic_text::Family::Name("Leland"))
-            .color(cosmic_text::Color::rgb(color[0], color[1], color[2])),
-    );
-    let line_y = buffer.layout_runs().next().map(|r| r.line_y).unwrap_or(0.0);
-    out.queue_buffer(x, baseline - line_y, buffer);
-}
 #[allow(clippy::too_many_arguments)]
 fn draw_note(
     quads: &mut QuadRenderer,

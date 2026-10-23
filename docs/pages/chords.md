@@ -298,3 +298,62 @@ Notes; verify their original layout and behavior. The chord-layout test covers
 triads, octave/input deduplication, adjacent heads, accidental columns, flat
 spelling, bass/treble division and notation-range filtering. Stack geometry was
 visually inspected with the bundled music font; full desktop testing is pending.
+
+## MIDI playback staff overlay
+
+Open a MIDI song in normal playback and click **Score: Off/On** below the
+transport bar. This is independent of Free Play and its exercise modes.
+
+- **View: Scroll** (default): a blue playhead stays at 20% of the time window;
+  notes move from right to left past it.
+- **View: Pages**: notes stay in place within the current window while the blue
+  playhead moves across them. At the boundary the view turns to the next window.
+- **Window** cycles through 4, 8 and 16 quarter-note beats. These are timing
+  windows, not inferred measures or original printed pages.
+- **Staff − / % / +** scales notation from 50% to 250%, initially 125%, limited
+  to available height and width. The effective fitted percentage is indicated.
+- **Spelling: # / b** chooses sharp or flat spellings for black keys. No key is
+  inferred. Each altered note gets an explicit accidental.
+
+Visible pitched MIDI tracks are combined on treble/bass staves, split at middle
+C. Hidden tracks, percussion channel 10 and zero-velocity notes are excluded.
+Same-onset/same-written-duration tones are stacked, with shared stems and offset
+adjacent noteheads. Green means the current note interval at the playhead;
+upcoming notes are light, finished notes dim. A paused playhead keeps its current
+highlight. Thin rails preserve the exact MIDI durations even when the displayed
+note value is only approximate. Notes held across a page/window boundary remain
+visible at its left edge, with an explanatory footer. All MIDI pitches can be
+shown; extra register room and ledger lines are allocated for the song.
+
+The overlay reads the player's timestamp after transport actions, subtracts the
+existing lead-in, and maps seconds to quarter-note beats using the file's tempo
+map. It has no independent animation clock: pause, seek, loop, speed changes,
+play-along waiting and tempo changes therefore use the same musical position.
+The waterfall's configurable animation offset does not shift the score playhead.
+Changing views/windows/size/spelling does not alter playback or send MIDI events.
+Options last for the current song playback scene.
+
+This is a **timed MIDI practice view**, not a reconstruction of a published
+score. Common whole/half/quarter/eighth/sixteenth/32nd values and single dots are
+chosen approximately from MIDI durations. It does not infer key/time signatures,
+bar structure, rests, ties, tuplets, beaming, voices or hand assignments. Tiny
+performance timing differences may produce closely spaced noteheads. Up to 512
+notes are rendered per window; dense windows show a prompt to reduce Window.
+The existing piano, transport, waterfall and Free Play practice remain available.
+
+Validation: four standalone score tests cover stationary page positions, moving
+and fixed playheads, backward seeking, lead-in, held intervals and duration
+symbols. MIDI tempo tests cover the default tempo, initial/later tempo changes,
+negative pre-roll and conversion round trips. Desktop checks:
+
+1. Load a song, enable Score and pause. Note positions/playhead must freeze.
+2. Compare Pages and Scroll during playback. Verify moving cursor/still notes
+   versus still cursor/moving notes, respectively, including a page boundary.
+3. Seek backward/forward, change speed and use looping/play-along waiting.
+   Confirm the playhead and note highlights follow the same position as playback.
+4. Test a tempo-changing file and long held notes crossing windows. Check
+   alignment, carried notes and exact-duration rails.
+5. Test chords, flats/sharps, dotted/flagged notes, extremes, hidden tracks,
+   percussion, empty score, 4/8/16 beats, zoom and resizing.
+6. Turn Score off and return to Free Play; confirm the previous note/chord
+   practice layouts, hints and optional reference audio behave as before.

@@ -174,6 +174,19 @@ impl Config {
         self.appearance.chord_identifier = chord_identifier;
     }
 
+    pub fn midi_folder(&self) -> Option<&std::path::Path> {
+        self.history.midi_folder.as_deref()
+    }
+    pub fn set_midi_folder(&mut self, folder: Option<PathBuf>) {
+        self.history.midi_folder = folder;
+    }
+    pub fn include_subfolders(&self) -> bool {
+        self.history.include_subfolders
+    }
+    pub fn set_include_subfolders(&mut self, include: bool) {
+        self.history.include_subfolders = include;
+    }
+
     pub fn last_opened_song(&self) -> Option<&PathBuf> {
         self.history.last_opened_song.as_ref()
     }
@@ -303,5 +316,22 @@ impl Config {
             std::fs::create_dir_all(path.parent().unwrap()).ok();
             std::fs::write(path, s).ok();
         }
+    }
+}
+
+#[cfg(test)]
+mod library_settings_tests {
+    use super::*;
+    #[test]
+    fn old_history_loads_and_library_preferences_round_trip() {
+        let mut history: HistoryV1 = ron::from_str("(last_opened_song:Some(\"old.mid\"))").unwrap();
+        assert!(history.midi_folder.is_none());
+        assert!(history.include_subfolders);
+        history.midi_folder = Some(PathBuf::from("Music/Øving og Bach"));
+        history.include_subfolders = false;
+        let loaded: HistoryV1 = ron::from_str(&ron::to_string(&history).unwrap()).unwrap();
+        assert_eq!(loaded.midi_folder, history.midi_folder);
+        assert!(!loaded.include_subfolders);
+        assert_eq!(loaded.last_opened_song, Some(PathBuf::from("old.mid")));
     }
 }

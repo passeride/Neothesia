@@ -1,10 +1,8 @@
 pub struct NeoBtn {
     id: Option<nuon::Id>,
     size: nuon::Size,
-    color: nuon::Color,
     label: String,
     icon: String,
-    tooltip: String,
 }
 
 impl NeoBtn {
@@ -12,10 +10,8 @@ impl NeoBtn {
         Self {
             id: None,
             size: Default::default(),
-            color: nuon::Color::WHITE,
             label: Default::default(),
             icon: Default::default(),
-            tooltip: Default::default(),
         }
     }
 
@@ -37,16 +33,6 @@ impl NeoBtn {
 
     pub fn icon(mut self, icon: impl Into<String>) -> Self {
         self.icon = icon.into();
-        self
-    }
-
-    pub fn tooltip(mut self, tooltip: impl Into<String>) -> Self {
-        self.tooltip = tooltip.into();
-        self
-    }
-
-    pub fn color(mut self, color: impl Into<nuon::Color>) -> Self {
-        self.color = color.into();
         self
     }
 
@@ -79,20 +65,11 @@ impl NeoBtn {
 
         let label = nuon::label()
             .size(self.size.width, self.size.height)
-            .font_size(24.0)
-            .color(self.color);
+            .font_size(24.0);
         if self.icon.is_empty() {
             label.text(&self.label).build(ui);
         } else {
             label.icon(&self.icon).build(ui);
-        }
-
-        if event.is_hovered() || event.is_pressed() {
-            nuon::label()
-                .text(&self.tooltip)
-                .size(w, 13.0)
-                .y(-13.0)
-                .build(ui);
         }
 
         event.is_clicked()

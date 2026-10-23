@@ -16,6 +16,7 @@ export default defineConfig({
         items: [
           { text: "Installation", link: "/pages/installation" },
           { text: "Shortcuts", link: "/pages/shortcuts" },
+          { text: "MIDI Library", link: "/pages/midi-library" },
           { text: "Live Chords", link: "/pages/chords" },
           { text: "Customization", link: "/pages/customization" },
           { text: "Video Encoding", link: "/pages/video-encoding" },

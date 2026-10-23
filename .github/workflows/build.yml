@@ -20,6 +20,8 @@ jobs:
           /tmp/chord-tests
           rustc --edition=2024 --test neothesia-core/src/score.rs -o /tmp/score-tests
           /tmp/score-tests
+          rustc --edition=2024 --test neothesia-core/src/midi_library.rs -o /tmp/library-tests
+          /tmp/library-tests
 
   lints:
     runs-on: ubuntu-latest

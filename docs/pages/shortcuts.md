@@ -16,3 +16,14 @@
 | **Tab**        | Open file select dialog |
 | **Left/Right** | Change output           |
 | **Enter**      | Start playing           |
+
+
+### In MIDI Library Search
+
+| Key | Action |
+| --- | --- |
+| **Ctrl+L / Cmd+L** | Focus search and select its contents |
+| **Ctrl+A / Cmd+A** | Select the current search for replacement |
+| **Backspace** | Remove the last character (or selected search) |
+| **Enter** | Play the first matching piece |
+| **Escape** | Leave search focus before the normal menu action |

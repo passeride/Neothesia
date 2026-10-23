@@ -7,6 +7,7 @@ pub use wgpu_jumpstart::{Color, Gpu, TransformUniform, Uniform};
 pub mod chords;
 pub mod config;
 pub mod font_system;
+pub mod midi_library;
 pub mod render;
 pub mod score;
 pub mod utils;

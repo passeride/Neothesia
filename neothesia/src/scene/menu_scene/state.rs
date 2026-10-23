@@ -8,6 +8,7 @@ use crate::{
 type InputDescriptor = midi_io::MidiInputPort;
 
 pub struct UiState {
+    pub(super) library: super::library::LibraryState,
     pub outputs: Vec<OutputDescriptor>,
     pub selected_output: Option<OutputDescriptor>,
 
@@ -24,11 +25,14 @@ pub struct UiState {
 }
 
 impl UiState {
-    pub fn new(_ctx: &Context, song: Option<Song>) -> Self {
+    pub fn new(ctx: &Context, song: Option<Song>) -> Self {
         let mut page_stack = VecDeque::new();
         page_stack.push_front(Page::Main);
 
         Self {
+            library: super::library::LibraryState::new(
+                ctx.config.midi_folder().map(|p| p.to_path_buf()),
+            ),
             outputs: Vec::new(),
             selected_output: None,
             inputs: Vec::new(),

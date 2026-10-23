@@ -72,3 +72,12 @@ size and background opacity are shared by practice and MIDI notation. The
 in-song Settings drawer also controls notation movement, visible beats,
 accidentals, played-note feedback, duration guides and beat grid. Preferences
 are saved automatically; exercise audio remains optional.
+
+
+## MIDI library
+
+Choose a folder on the home screen to keep a persistent gallery of your MIDI
+files. Neothesia remembers the folder and scans it at startup, with optional
+subfolders, search, name/newest sorting and pages that fit the window. Click a
+piece to play it; use Refresh after changing files. See the
+[MIDI library guide](docs/pages/midi-library.md) for details.

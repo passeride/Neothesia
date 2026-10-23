@@ -71,6 +71,10 @@ impl Default for PlaybackConfig {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct HistoryV1 {
+    #[serde(default)]
+    pub midi_folder: Option<PathBuf>,
+    #[serde(default = "default_include_subfolders")]
+    pub include_subfolders: bool,
     pub last_opened_song: Option<PathBuf>,
 }
 
@@ -82,6 +86,8 @@ pub enum History {
 impl Default for History {
     fn default() -> Self {
         Self::V1(HistoryV1 {
+            midi_folder: None,
+            include_subfolders: true,
             last_opened_song: None,
         })
     }
@@ -294,4 +300,8 @@ fn default_output() -> Option<String> {
 
 fn default_octave_shift() -> u8 {
     5
+}
+
+fn default_include_subfolders() -> bool {
+    true
 }

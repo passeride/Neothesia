@@ -2,6 +2,7 @@ mod state;
 use bytes::Bytes;
 use state::{Page, UiState};
 
+mod library;
 mod midi_picker;
 use midi_picker::open_midi_file_picker;
 
@@ -113,7 +114,7 @@ impl MenuScene {
             logo,
         ));
 
-        Self {
+        let mut scene = Self {
             bg_pipeline: BgPipeline::new(&ctx.gpu),
             text_renderer,
             state: iced_state,
@@ -128,7 +129,9 @@ impl MenuScene {
             nuon: nuon::Ui::new(),
             midi_input_state: MidiInputState::default(),
             popup: Popup::None,
-        }
+        };
+        scene.refresh_library(ctx);
+        scene
     }
 
     fn main_ui(&mut self, ctx: &mut Context) {
@@ -204,114 +207,7 @@ impl MenuScene {
     }
 
     fn main_page_ui(&mut self, ctx: &mut Context, ui: &mut nuon::Ui) {
-        let win_w = ctx.window_state.logical_size.width;
-        let win_h = ctx.window_state.logical_size.height;
-
-        let w = 450.0;
-        let h = 80.0;
-        let gap = 10.0;
-
-        let logo_w = 650.0;
-        let logo_h = 118.0;
-        let post_logo_gap = 40.0;
-
-        nuon::translate()
-            .x(win_w / 2.0)
-            .y(win_h / 5.0)
-            .build(ui, |ui| {
-                nuon::image(self.logo)
-                    .x(-logo_w / 2.0)
-                    .size(logo_w, logo_h)
-                    .build(ui);
-
-                nuon::translate()
-                    .x(-w / 2.0)
-                    .y(logo_h + post_logo_gap)
-                    .build(ui, |ui| {
-                        if neo_btn()
-                            .size(w, h)
-                            .label(locals::menu::select_file())
-                            .build(ui)
-                        {
-                            self.futures.push(open_midi_file_picker(&mut self.state));
-                        }
-
-                        nuon::translate().y(h + gap).add_to_current(ui);
-
-                        if neo_btn()
-                            .size(w, h)
-                            .label(locals::menu::settings())
-                            .build(ui)
-                        {
-                            self.state.go_to(Page::Settings);
-                        }
-
-                        nuon::translate().y(h + gap).add_to_current(ui);
-
-                        if neo_btn().size(w, h).label(locals::menu::exit()).build(ui) {
-                            self.state.go_back();
-                        }
-                    });
-            });
-
-        nuon::translate().x(0.0).y(win_h).build(ui, |ui| {
-            let gap = 10.0;
-            let btn_w = 80.0;
-            let btn_h = 60.0;
-
-            nuon::translate().y(-gap).add_to_current(ui);
-            nuon::translate().y(-btn_h).add_to_current(ui);
-
-            if let Some(song) = self.state.song() {
-                nuon::label()
-                    .text(&song.file.name)
-                    .size(win_w, 60.0)
-                    .font_size(16.0)
-                    .build(ui);
-            }
-
-            nuon::translate().build(ui, |ui| {
-                nuon::translate().x(gap).add_to_current(ui);
-
-                if neo_btn()
-                    .size(btn_w, btn_h)
-                    .icon(icons::balloon_icon())
-                    .color([100; 3])
-                    .tooltip(locals::menu::freeplay())
-                    .build(ui)
-                {
-                    state::freeplay(&self.state, ctx);
-                }
-            });
-
-            if self.state.song().is_none() {
-                return;
-            }
-
-            nuon::translate().x(win_w).build(ui, |ui| {
-                nuon::translate().x(-btn_w - gap).add_to_current(ui);
-
-                if neo_btn()
-                    .size(btn_w, btn_h)
-                    .icon(icons::play_icon())
-                    .tooltip(locals::menu::play())
-                    .build(ui)
-                {
-                    state::play(&self.state, ctx);
-                }
-
-                nuon::translate().x(-btn_w - gap).add_to_current(ui);
-
-                if neo_btn()
-                    .size(btn_w, btn_h)
-                    .icon(icons::note_list_icon())
-                    .tooltip(locals::menu::tracks())
-                    .build(ui)
-                {
-                    self.state.go_to(Page::TrackSelection);
-                }
-            });
-        });
+        self.library_ui(ctx, ui);
     }
 }
 
@@ -332,6 +228,9 @@ impl Scene for MenuScene {
                 std::task::Poll::Pending => true,
             });
 
+        if std::mem::take(&mut self.state.library.needs_scan) {
+            self.refresh_library(ctx);
+        }
         self.state.tick(ctx);
 
         self.main_ui(ctx);
@@ -387,6 +286,9 @@ impl Scene for MenuScene {
                 }
             }
             Page::Main => {
+                if self.library_keyboard(ctx, event) {
+                    return;
+                }
                 if event.key_pressed(Key::Named(NamedKey::Tab)) {
                     self.futures.push(open_midi_file_picker(&mut self.state));
                 }

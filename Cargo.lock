@@ -1671,7 +1671,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "neothesia"
+name = "tangent"
 version = "0.5.0"
 dependencies = [
  "anyhow",
@@ -1686,8 +1686,8 @@ dependencies = [
  "log",
  "midi-file",
  "midi-io",
- "neothesia-core",
- "neothesia-image",
+ "tangent-core",
+ "tangent-image",
  "nuon",
  "oxisynth",
  "piano-layout",
@@ -1704,7 +1704,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "neothesia-ai"
+name = "tangent-ai"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -1719,21 +1719,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "neothesia-cli"
+name = "tangent-cli"
 version = "0.5.0"
 dependencies = [
  "clap",
  "env_logger",
  "ffmpeg-encoder",
  "midi-file",
- "neothesia-core",
+ "tangent-core",
  "oxisynth",
  "pollster 1.0.1",
  "wgpu-jumpstart",
 ]
 
 [[package]]
-name = "neothesia-core"
+name = "tangent-core"
 version = "0.1.0"
 dependencies = [
  "bytemuck",
@@ -1743,7 +1743,7 @@ dependencies = [
  "glyphon",
  "log",
  "midi-file",
- "neothesia-image",
+ "tangent-image",
  "objc2-foundation 0.3.2",
  "piano-layout",
  "profiling",
@@ -1754,7 +1754,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "neothesia-image"
+name = "tangent-image"
 version = "0.1.0"
 dependencies = [
  "bytes",
@@ -1847,7 +1847,7 @@ name = "nuon"
 version = "0.1.0"
 dependencies = [
  "euclid",
- "neothesia-image",
+ "tangent-image",
 ]
 
 [[package]]

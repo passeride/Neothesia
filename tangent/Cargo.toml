@@ -1,0 +1,51 @@
+[package]
+name = "tangent"
+version = "0.5.0"
+authors = ["Poly <marynczak.bartlomiej@gmail.com>"]
+edition.workspace = true
+default-run = "tangent"
+
+[features]
+default = ["oxi-synth"]
+
+profiling-on = ["profiling/profile-with-puffin", "puffin", "puffin_http"]
+synth = []
+fluid-synth = ["synth", "cpal", "fluidlite", "oxisynth"]
+oxi-synth = ["synth", "cpal", "oxisynth"]
+
+[dependencies]
+thiserror.workspace = true
+pollster.workspace = true
+log.workspace = true
+env_logger.workspace = true
+wgpu.workspace = true
+wgpu-jumpstart.workspace = true
+tangent-core.workspace = true
+tangent-image.workspace = true
+midi-file.workspace = true
+midi-io.workspace = true
+nuon.workspace = true
+futures-channel.workspace = true
+cosmic-text.workspace = true
+sys-locale.workspace = true
+anyhow.workspace = true
+
+bytes.workspace = true
+lilt.workspace = true
+winit.workspace = true
+rfd.workspace = true
+
+cpal = { workspace = true, optional = true }
+fluidlite = { workspace = true, optional = true }
+oxisynth = { workspace = true, optional = true }
+
+profiling.workspace = true
+puffin = { workspace = true, optional = true }
+puffin_http = { workspace = true, optional = true }
+piano-layout.workspace = true
+
+[[bin]]
+name = "tangent"
+
+[target.'cfg(target_os = "windows")'.build-dependencies]
+embed-resource.workspace = true

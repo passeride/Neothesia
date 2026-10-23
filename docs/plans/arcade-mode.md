@@ -33,10 +33,10 @@ not a proposed compatibility roadmap.
 | Ordinary MIDI | Timed pitches, velocities, tempo changes and multiple tracks; existing parser and synthesizer | Tracks are not inherently difficulty levels. Keep working unchanged as a standalone “Original” arrangement. |
 | Clone Hero song folder | `notes.mid` or `notes.chart`, `song.ini`, audio; explicit game conventions and metadata | Useful packaging pattern. Five-fret MIDI notes encode lanes and difficulty, not ordinary piano pitches. Do not interpret these as piano arrangements. |
 | Rock Band Pro Keys MIDI | Named Easy/Medium/Hard/Expert tracks; closer to an actual keyboard chart | The documented playable pitch range is MIDI 48–72, with game markers and range shifts. Research reference only; do not adopt or implement an importer. |
-| MusicXML / compressed `.mxl` | Written notation interchange; a better source for spelling, voices and staff notation than reconstructing everything from MIDI | Does not by itself establish Neothesia's game rules or difficulty selection. Later notation import, not a prerequisite for Arcade. |
+| MusicXML / compressed `.mxl` | Written notation interchange; a better source for spelling, voices and staff notation than reconstructing everything from MIDI | Does not by itself establish Tangent's game rules or difficulty selection. Later notation import, not a prerequisite for Arcade. |
 | MusicXML opus collection | Groups multiple MusicXML scores; can represent a collection containing separate piano arrangements | A usable standard collection mechanism, but the Easy/Medium/Hard relationship would still need an explicit convention. Candidate for later piano-score interchange. |
 | Synthesia `.synthesia` sidecar | Piano-oriented metadata alongside unchanged MIDI: title, composer, arranger, difficulty, hands, finger hints and song groups | A relevant existing piano precedent. Its documented difficulty is a per-song rating; the guide does not establish a standard multi-difficulty arrangement selector for one song. Use as inspiration, not a dependency. |
-| Neothesia song folder with JSON manifest | Existing MIDI files plus explicit arrangements, title, artist, cover and stable IDs | Recommended first implementation. An open, versioned sidecar convention, not a replacement note encoding. |
+| Tangent song folder with JSON manifest | Existing MIDI files plus explicit arrangements, title, artist, cover and stable IDs | Recommended first implementation. An open, versioned sidecar convention, not a replacement note encoding. |
 
 Clone Hero's `diff_keys` / `diff_guitar` metadata are displayed intensity ratings;
 they are not the Easy/Medium/Hard note charts themselves. The core distinction is
@@ -65,7 +65,7 @@ can follow once the native piano song-folder convention is stable.
 
 ### Proposed song manifest
 
-Use `song.neothesia.json` in a song folder. Paths are relative to that folder.
+Use `song.tangent.json` in a song folder. Paths are relative to that folder.
 Example structure: manifest, `cover.png`, `easy.mid`, `medium.mid`, `hard.mid`.
 Multiple difficulties may reference different track selections in the same MIDI.
 
@@ -259,7 +259,7 @@ Current `PlayingScene::update` stops playback while required keys are missing;
 this scoring specification. Keep that path and implement a separate Arcade engine.
 
 Timestamp MIDI at the callback boundary, before the UI event queue. Extend
-`NeothesiaEvent::MidiInput` with a monotonic arrival timestamp (or a mapped
+`TangentEvent::MidiInput` with a monotonic arrival timestamp (or a mapped
 backend timestamp when available). Define a run clock anchored to monotonic time,
 with exact speed, lead-in and pause segments. Derive target positions, judgement
 deadlines and MIDI scheduling from that mapping, not accumulated render deltas.
@@ -290,6 +290,12 @@ complete-run record. Paused/interrupted attempts have separate practice results
 in v1. Escape opens pause; exiting a run requires a deliberate menu action.
 
 ## Visual direction and effects inventory
+
+The application is now **Tangent**. Use its circular note-and-tangent symbol and
+ivory/turquoise wordmark (see [branding](../pages/branding.md)). Arcade retains
+the **Midnight Resonance** concept: midnight navy, ivory, turquoise and warm amber,
+with local resonance rings at the strike line. The main logo stays consistent
+across playback, practice and Arcade.
 
 Use the existing Midnight/Graphite/Warm/High Contrast themes: restrained stage
 lighting, translucent surfaces, crisp musical content and brighter local feedback.
@@ -370,10 +376,10 @@ may link to another category, but must not masquerade as the displayed record.
 
 Proposed new modules (names may adjust to the existing architecture):
 
-- `neothesia-core/src/arcade/chart.rs`: target compiler, groups, canonical identity.
-- `neothesia-core/src/arcade/judge.rs`: timestamped matching and deterministic deadlines.
-- `neothesia-core/src/arcade/scoring.rs`: pure rules, perfect maximum, result summary.
-- `neothesia-core/src/song_package.rs`: manifest schema and validation; extend library
+- `tangent-core/src/arcade/chart.rs`: target compiler, groups, canonical identity.
+- `tangent-core/src/arcade/judge.rs`: timestamped matching and deterministic deadlines.
+- `tangent-core/src/arcade/scoring.rs`: pure rules, perfect maximum, result summary.
+- `tangent-core/src/song_package.rs`: manifest schema and validation; extend library
   catalog without parsing every MIDI during startup.
 - App `arcade/session.rs`: run clock, lifecycle, timestamp routing and playback policy.
 - App `arcade/presentation.rs`: HUD, effect pool and renderer integration.

@@ -1,20 +1,15 @@
-![Neothesia Baner](https://github.com/user-attachments/assets/383438e5-80cd-49d2-af30-85afe5d79c6b)
+![Tangent](assets/branding/tangent-preview.png)
 
 
-# Neothesia
+# Tangent
 
-Neothesia is a cross-platform MIDI visualizer build in Rust.
+Tangent is a cross-platform MIDI visualizer build in Rust.
 It helps people to quickly learn how to play piano.
 It takes music notes from a MIDI file as an input and displays them as colorful falling blocks on a virtual piano.
 
-Opensource Synthesia was abandoned in favour of [closed source commercial project](https://www.synthesiagame.com/)  
-The goal of this project is to bring Opensource Synthesia back to life, and make it look and work as good (or even better) than commercial Synthesia.
+Tangent builds on [Neothesia](https://github.com/PolyMeilex/Neothesia), with piano practice, live chord recognition and a persistent MIDI library.
 
-If you have any questions, feel free to join my Discord
-
-[<img alt="Discord" src="https://img.shields.io/discord/273176778946641920?logo=discord&style=for-the-badge&color=%23a051ee">](https://discord.gg/sgeZuVA)
-
-## Screenshots
+## Upstream screenshots (before Tangent branding)
 
 ![image](https://github.com/PolyMeilex/Neothesia/assets/20758186/65483bab-0b74-4fd4-90b1-fdd00508b676)
 
@@ -27,17 +22,15 @@ If you have any questions, feel free to join my Discord
 
 ## Download
 
-<a href="https://flathub.org/apps/details/com.github.polymeilex.neothesia"><img width="240" alt="Download on Flathub" src="https://flathub.org/assets/badges/flathub-badge-en.png"/></a>
+Download Tangent builds from this repository's [GitHub Actions](https://github.com/passeride/Neothesia/actions) artifacts, or [Releases](https://github.com/passeride/Neothesia/releases) when published. Windows builds are named `tangent.exe`; macOS bundles are `Tangent.app`.
 
-Arch Linux (**Unofficial AUR** built from source, maintained by @zayn7lie): <https://aur.archlinux.org/packages/neothesia>
+The upstream Flathub/AUR packages distribute Neothesia, not this Tangent fork.
 
-All binary releases:
-[https://github.com/PolyMeilex/Neothesia/releases](https://github.com/PolyMeilex/Neothesia/releases)
+## Documentation
 
-## FAQ
-
-- [FAQ](https://polymeilex.github.io/Neothesia/pages/installation.html)
-- [Video encoding](https://polymeilex.github.io/Neothesia/pages/video-encoding.html)
+- [Installation](docs/pages/installation.md)
+- [Video encoding](docs/pages/video-encoding.md)
+- [Brand assets](docs/pages/branding.md)
 
 ## Thanks to
 
@@ -77,7 +70,7 @@ are saved automatically; exercise audio remains optional.
 ## MIDI library
 
 Choose a folder on the home screen to keep a persistent gallery of your MIDI
-files. Neothesia remembers the folder and scans it at startup, with optional
+files. Tangent remembers the folder and scans it at startup, with optional
 subfolders, search, name/newest sorting and pages that fit the window. Click a
 piece to play it; use Refresh after changing files. See the
 [MIDI library guide](docs/pages/midi-library.md) for details.

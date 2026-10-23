@@ -1,10 +1,12 @@
 import { defineConfig } from "vitepress";
 
 export default defineConfig({
-  title: "Neothesia",
-  description: "Flashy Synthesia Like Software For Linux, Windows and MacOs",
+  title: "Tangent",
+  description: "Piano practice, MIDI playback and live chord recognition",
   base: "/Neothesia/",
+  head: [["link", { rel: "icon", type: "image/svg+xml", href: "/Neothesia/tangent-icon.svg" }]],
   themeConfig: {
+    logo: "/tangent-icon.svg",
     nav: [
       { text: "Home", link: "/" },
       { text: "How-to", link: "/pages/installation" },
@@ -19,13 +21,14 @@ export default defineConfig({
           { text: "MIDI Library", link: "/pages/midi-library" },
           { text: "Live Chords", link: "/pages/chords" },
           { text: "Customization", link: "/pages/customization" },
+          { text: "Branding", link: "/pages/branding" },
           { text: "Video Encoding", link: "/pages/video-encoding" },
         ],
       },
     ],
 
     socialLinks: [
-      { icon: "github", link: "https://github.com/PolyMeilex/Neothesia" },
+      { icon: "github", link: "https://github.com/passeride/Neothesia" },
     ],
   },
 });

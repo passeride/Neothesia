@@ -1,15 +1,15 @@
 build-app:
-	cargo build --release --bin neothesia
+	cargo build --release --bin tangent
 run-app:
-	cargo run --release --bin neothesia
+	cargo run --release --bin tangent
 
 install-app:
-	cargo install --path neothesia
+	cargo install --path tangent
 
 check-recorder:
-	cargo check -p neothesia-cli
+	cargo check -p tangent-cli
 build-recorder:
-	cargo build --release -p neothesia-cli
+	cargo build --release -p tangent-cli
 run-recorder:
-	cargo run --release -p neothesia-cli -- $(file)
+	cargo run --release -p tangent-cli -- $(file)
 

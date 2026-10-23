@@ -15,8 +15,8 @@ pub type Rect = euclid::default::Rect<f32>;
 mod data_store;
 mod settings;
 use data_store::DataStore;
-use neothesia_image::ImageIdentifier;
 pub use settings::*;
+use tangent_image::ImageIdentifier;
 
 pub fn center_y(container_h: f32, item_h: f32) -> f32 {
     container_h / 2.0 - item_h / 2.0

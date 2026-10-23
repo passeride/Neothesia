@@ -10,10 +10,10 @@ runs:
       run: cargo build --release
     - name: copy binary
       shell: bash
-      run: cp target/release/neothesia .github/app/Neothesia.app/Contents/MacOS
+      run: cp target/release/tangent .github/app/Tangent.app/Contents/MacOS
     - name: zip binary
       shell: bash
-      run: cd .github/app/ && zip -r app.zip Neothesia.app && cd ../..
+      run: cd .github/app/ && zip -r app.zip Tangent.app && cd ../..
     - uses: actions/upload-artifact@v7
       with:
         name: macos-artifact

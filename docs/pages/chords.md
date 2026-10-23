@@ -21,7 +21,7 @@ and audio/microphone recognition are not modeled.
 ## Reusable API
 
 ```rust
-use neothesia_core::chords::{recognize, RecognitionOptions, Spelling};
+use tangent_core::chords::{recognize, RecognitionOptions, Spelling};
 
 let result = recognize(&[64, 67, 72], RecognitionOptions::default());
 assert_eq!(result.candidates[0].symbol, "C/E");
@@ -80,7 +80,7 @@ model in this first implementation.
 The dependency-free engine and note-state tests can run without graphics/audio:
 
 ```sh
-rustc --edition=2024 --test neothesia-core/src/chords/mod.rs -o /tmp/chord-tests
+rustc --edition=2024 --test tangent-core/src/chords/mod.rs -o /tmp/chord-tests
 /tmp/chord-tests
 ```
 

@@ -7,7 +7,7 @@ in the [Arcade implementation plan](../plans/arcade-mode.md). They are planned
 features and are not part of the current library behavior below.
 
 1. Click **Choose folder** and select the folder where you keep your music.
-2. Neothesia saves the folder immediately and lists `.mid` and `.midi` files,
+2. Tangent saves the folder immediately and lists `.mid` and `.midi` files,
    including upper-case extensions. Subfolders are included by default.
 3. Click a piece's card to load it and start playback. **Escape** returns to the
    gallery; **Tracks** and **Play** in the bottom bar remain available for the
@@ -15,7 +15,7 @@ features and are not part of the current library behavior below.
 
 The folder and subfolder preference survive app restarts. The folder is scanned
 when the menu is created, including at startup and when returning from playback
-or Free Play. Files remain in their original locations; Neothesia does not copy,
+or Free Play. Files remain in their original locations; Tangent does not copy,
 move or delete them. **Change folder** replaces the saved folder; cancelling the
 picker keeps the current one.
 

@@ -16,11 +16,11 @@ jobs:
       - name: Test chord recognition, note reading, training, and live MIDI state
         shell: bash
         run: |
-          rustc --edition=2024 --test neothesia-core/src/chords/mod.rs -o /tmp/chord-tests
+          rustc --edition=2024 --test tangent-core/src/chords/mod.rs -o /tmp/chord-tests
           /tmp/chord-tests
-          rustc --edition=2024 --test neothesia-core/src/score.rs -o /tmp/score-tests
+          rustc --edition=2024 --test tangent-core/src/score.rs -o /tmp/score-tests
           /tmp/score-tests
-          rustc --edition=2024 --test neothesia-core/src/midi_library.rs -o /tmp/library-tests
+          rustc --edition=2024 --test tangent-core/src/midi_library.rs -o /tmp/library-tests
           /tmp/library-tests
 
   lints:
@@ -32,7 +32,7 @@ jobs:
         run: sudo apt update && sudo apt install libasound2-dev libavcodec-dev libavformat-dev libswscale-dev nasm
       - name: Test core behavior and saved appearance preferences
         shell: bash
-        run: cargo test -p neothesia-core --lib --locked
+        run: cargo test -p tangent-core --lib --locked
       - name: Test MIDI tempo timeline
         shell: bash
         run: cargo test -p midi-file --lib --locked
@@ -68,7 +68,7 @@ jobs:
       - id: Build
         uses: ./.github/actions/windows
       - name: ls
-        run: ls -l target/release/neothesia.exe
+        run: ls -l target/release/tangent.exe
 
   build_windows_recorder:
     runs-on: windows-latest
@@ -81,7 +81,7 @@ jobs:
       - id: Build
         uses: ./.github/actions/windows-recorder
       - name: ls
-        run: ls -l target/release/neothesia-cli.exe
+        run: ls -l target/release/tangent-cli.exe
 
   build_macos:
     runs-on: macos-latest

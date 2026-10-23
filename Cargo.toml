@@ -3,17 +3,17 @@ members = [
   "piano-layout",
   "wgpu-jumpstart",
   "ffmpeg-encoder",
-  "neothesia",
-  "neothesia-ai",
-  "neothesia-cli",
-  "neothesia-core",
-  "neothesia-image",
+  "tangent",
+  "tangent-ai",
+  "tangent-cli",
+  "tangent-core",
+  "tangent-image",
   "midi-file",
   "midi-io",
   "nuon",
 ]
 
-default-members = ["neothesia"]
+default-members = ["tangent"]
 resolver = "2"
 
 [workspace.package]
@@ -21,8 +21,8 @@ edition = "2024"
 
 [workspace.dependencies]
 wgpu-jumpstart = { path = "./wgpu-jumpstart" }
-neothesia-core = { path = "./neothesia-core" }
-neothesia-image = { path = "./neothesia-image" }
+tangent-core = { path = "./tangent-core" }
+tangent-image = { path = "./tangent-image" }
 midi-file = { path = "./midi-file" }
 midi-io = { path = "./midi-io" }
 piano-layout = { path = "./piano-layout" }
@@ -67,7 +67,7 @@ sys-locale = "0.3.2"
 png = "0.18"
 midly = "0.5"
 
-# neothesia-cli deps
+# tangent-cli deps
 ffmpeg = { package = "ffmpeg-sys-next", version = "9", default-features = false }
 clap = { version = "4.5.41", default-features = false, features = [
   "color",
@@ -77,7 +77,7 @@ clap = { version = "4.5.41", default-features = false, features = [
   "usage",
 ] }
 
-# neothesia-ai deps
+# tangent-ai deps
 ndarray = "0.17"
 rten = "0.26"
 rten-tensor = "0.26"

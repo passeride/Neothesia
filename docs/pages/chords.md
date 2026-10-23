@@ -325,6 +325,21 @@ note value is only approximate. Notes held across a page/window boundary remain
 visible at its left edge, with an explanatory footer. All MIDI pitches can be
 shown; extra register room and ledger lines are allocated for the song.
 
+A small **ring on the blue playhead** shows each pitch you play, on its actual
+staff position and octave. Green means an exact match with a currently sounding
+visible score note; orange means a different pitch; blue means no score note is
+active at that instant. The footer shows your pitch and signed distance to the
+nearest active target in semitones, e.g. `D4: +2 st from C4`. Octaves count:
+playing C5 against C4 reports +12. For chords this compares each input with the
+nearest sounding chord tone; it does not judge chord completeness or rhythm.
+Feedback is captured at the moment you press, so it does not change when playback
+moves to the next note. Released rings remain for 650 ms; sustain and multiple
+input channels are respected. Accidentals follow Spelling. Notes outside the
+song's allocated staff area get a boundary arrow and their true pitch in the
+footer, rather than shifting the staff. Up to four pitch comparisons fit in the
+footer, with a count for additional notes; all input rings are drawn. File
+playback never creates input rings. This works in both Pages and Scroll views.
+
 The overlay reads the player's timestamp after transport actions, subtracts the
 existing lead-in, and maps seconds to quarter-note beats using the file's tempo
 map. It has no independent animation clock: pause, seek, loop, speed changes,
@@ -341,9 +356,10 @@ performance timing differences may produce closely spaced noteheads. Up to 512
 notes are rendered per window; dense windows show a prompt to reduce Window.
 The existing piano, transport, waterfall and Free Play practice remain available.
 
-Validation: four standalone score tests cover stationary page positions, moving
+Validation: five standalone score tests cover stationary page positions, moving
 and fixed playheads, backward seeking, lead-in, held intervals and duration
-symbols. MIDI tempo tests cover the default tempo, initial/later tempo changes,
+symbols, plus exact input pitches, octave errors, nearest chord-tone selection,
+stable ties and silent/interval-edge feedback. MIDI tempo tests cover the default tempo, initial/later tempo changes,
 negative pre-roll and conversion round trips. Desktop checks:
 
 1. Load a song, enable Score and pause. Note positions/playhead must freeze.
@@ -355,5 +371,10 @@ negative pre-roll and conversion round trips. Desktop checks:
    alignment, carried notes and exact-duration rails.
 5. Test chords, flats/sharps, dotted/flagged notes, extremes, hidden tracks,
    percussion, empty score, 4/8/16 beats, zoom and resizing.
-6. Turn Score off and return to Free Play; confirm the previous note/chord
+6. Pause inside a long C4 note: play C4, D4, B3 and C5; expect green/0,
+   orange/+2, orange/−1 and orange/+12 feedback. Check both staves, flats/sharps,
+   chords, short taps, sustain/release, duplicate pitches on separate channels,
+   out-of-register arrows and silence (blue). Confirm automatic playback creates
+   no rings and feedback is captured at attack rather than recolored later.
+7. Turn Score off and return to Free Play; confirm the previous note/chord
    practice layouts, hints and optional reference audio behave as before.

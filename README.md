@@ -61,4 +61,6 @@ Single-note practice continues without a score or ending and requires the correc
 
 Normal MIDI playback also has a **Score** overlay: choose scrolling notation with
 a fixed playhead or stationary pages with a moving playhead. Staff size, beat
-window and accidental spelling are adjustable.
+window and accidental spelling are adjustable. A small ring at the playhead shows
+your played pitches: green for a match, orange for a mismatch, with semitone
+distance to the nearest active target in the footer.

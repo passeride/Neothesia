@@ -42,6 +42,13 @@ impl ScoreNote {
         self.start <= beat && beat < self.end
     }
 }
+/// Pitch-only feedback against the nearest note sounding at the input time.
+/// Positive offsets mean the played pitch was higher; octaves are significant.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PitchFeedback {
+    pub expected: u8,
+    pub semitones: i16,
+}
 #[derive(Default)]
 pub struct Score {
     notes: Vec<ScoreNote>,
@@ -75,6 +82,18 @@ impl Score {
     }
     pub fn notes(&self) -> &[ScoreNote] {
         &self.notes
+    }
+    pub fn pitch_feedback(&self, beat: f64, played: u8) -> Option<PitchFeedback> {
+        let first = self.prefix_end.partition_point(|end| *end <= beat);
+        let last = self.notes.partition_point(|n| n.start <= beat);
+        self.notes[first.min(last)..last]
+            .iter()
+            .filter(|n| n.active(beat))
+            .min_by_key(|n| (played.abs_diff(n.pitch), n.pitch))
+            .map(|n| PitchFeedback {
+                expected: n.pitch,
+                semitones: i16::from(played) - i16::from(n.pitch),
+            })
     }
     pub fn visible(&self, window: ScoreWindow) -> impl Iterator<Item = &ScoreNote> {
         let first = self.prefix_end.partition_point(|end| *end <= window.start);
@@ -215,6 +234,47 @@ mod tests {
                 .count(),
             2
         );
+    }
+    #[test]
+    fn input_feedback_uses_exact_octaves_nearest_chord_tone_and_active_intervals() {
+        let score = Score::new(vec![
+            ScoreNote {
+                start: 0.0,
+                end: 8.0,
+                pitch: 60,
+                track: 0,
+            },
+            ScoreNote {
+                start: 1.0,
+                end: 2.0,
+                pitch: 64,
+                track: 1,
+            },
+            ScoreNote {
+                start: 1.0,
+                end: 2.0,
+                pitch: 67,
+                track: 1,
+            },
+        ]);
+        let feedback = |beat, played, expected, semitones| {
+            assert_eq!(
+                score.pitch_feedback(beat, played),
+                Some(PitchFeedback {
+                    expected,
+                    semitones
+                })
+            );
+        };
+        feedback(1.0, 64, 64, 0);
+        feedback(1.5, 66, 67, -1);
+        feedback(1.5, 65, 64, 1);
+        feedback(1.5, 62, 60, 2); // Equidistant targets: stable lower-pitch tie break.
+        feedback(4.0, 72, 60, 12); // Held target, exact octave, no render-window cap.
+        feedback(2.0, 64, 60, 4); // End is exclusive.
+        assert_eq!(score.pitch_feedback(-0.01, 60), None);
+        assert_eq!(score.pitch_feedback(8.0, 60), None);
+        assert_eq!(Score::default().pitch_feedback(0.0, 60), None);
     }
     #[test]
     fn rhythm_symbols_preserve_common_values_and_dots() {

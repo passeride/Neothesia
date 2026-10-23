@@ -359,6 +359,14 @@ impl Scene for PlayingScene {
     }
 
     fn midi_event(&mut self, _ctx: &mut Context, channel: u8, message: &MidiMessage) {
+        let seconds = self.player.time().as_secs_f64() - self.player.leed_in().as_secs_f64();
+        let beat = self
+            .player
+            .song()
+            .file
+            .tempo_track
+            .seconds_to_quarters(seconds);
+        self.score_overlay.midi_event(channel, message, beat);
         self.player.user_midi_event(channel, message);
         self.keyboard.user_midi_event(message);
     }

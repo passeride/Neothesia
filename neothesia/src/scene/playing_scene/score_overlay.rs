@@ -1,4 +1,9 @@
-use std::collections::BTreeMap;
+use std::{
+    collections::BTreeMap,
+    time::{Duration, Instant},
+};
+
+use midi_file::midly::MidiMessage;
 
 use crate::{
     context::Context,
@@ -9,11 +14,19 @@ use midi_file::tempo_track::TempoTrack;
 use neothesia_core::{
     chords::{
         Spelling,
+        live::LiveNotes,
+        note_name,
         notes::{Clef, ledger_steps, staff_pitch},
     },
     render::{QuadRenderer, TextRenderer},
-    score::{NoteValue, Rhythm, Score, ScoreNote, ScoreWindow, ViewMode},
+    score::{NoteValue, PitchFeedback, Rhythm, Score, ScoreNote, ScoreWindow, ViewMode},
 };
+
+#[derive(Clone, Copy)]
+struct InputMark {
+    feedback: Option<PitchFeedback>,
+    released: Option<Instant>,
+}
 
 pub(super) struct ScoreOverlay {
     enabled: bool,
@@ -25,6 +38,8 @@ pub(super) struct ScoreOverlay {
     upper: f32,
     lower: f32,
     glyphs: MusicGlyphs,
+    input: LiveNotes,
+    marks: [Option<InputMark>; 128],
 }
 impl ScoreOverlay {
     pub fn new(song: &Song) -> Self {
@@ -81,6 +96,39 @@ impl ScoreOverlay {
             upper: upper as f32 * 5.0,
             lower: lower as f32 * 5.0,
             glyphs: MusicGlyphs::default(),
+            input: LiveNotes::default(),
+            marks: [None; 128],
+        }
+    }
+
+    /// Only physical/PC/mouse input reaches this path, never file playback.
+    pub fn midi_event(&mut self, channel: u8, message: &MidiMessage, beat: f64) {
+        let now = Instant::now();
+        match *message {
+            MidiMessage::NoteOn { key, vel } => {
+                self.input.note_on(channel, key.as_int(), vel.as_int());
+                if channel < 16 && channel != 9 && vel.as_int() > 0 {
+                    self.marks[key.as_int() as usize] = Some(InputMark {
+                        feedback: self.score.pitch_feedback(beat, key.as_int()),
+                        released: None,
+                    });
+                }
+            }
+            MidiMessage::NoteOff { key, .. } => self.input.note_off(channel, key.as_int()),
+            MidiMessage::Controller { controller, value } => {
+                self.input
+                    .controller(channel, controller.as_int(), value.as_int());
+            }
+            _ => return,
+        }
+        let sounding = self.input.notes();
+        for (pitch, mark) in self.marks.iter_mut().enumerate() {
+            if let Some(mark) = mark
+                && !sounding.contains(&(pitch as u8))
+                && mark.released.is_none()
+            {
+                mark.released = Some(now);
+            }
         }
     }
 
@@ -391,6 +439,106 @@ impl ScoreOverlay {
             staff_end - staff_top,
             [0.3, 0.75, 1.0, 1.0],
         );
+        // Capture correctness on attack, then retain releases briefly so even a
+        // short wrong tap is readable. Sustain/multi-channel releases use LiveNotes.
+        let now = Instant::now();
+        let mut feedback_labels = Vec::new();
+        let pitch_label = |midi: u8| {
+            format!(
+                "{}{}",
+                note_name(midi, self.spelling),
+                i16::from(midi) / 12 - 1
+            )
+        };
+        for (midi, mark) in self.marks.iter_mut().enumerate() {
+            let Some(input) = *mark else { continue };
+            if input
+                .released
+                .is_some_and(|t| now.duration_since(t) > Duration::from_millis(650))
+            {
+                *mark = None;
+                continue;
+            }
+            let midi = midi as u8;
+            let clef = if midi < 60 { Clef::Bass } else { Clef::Treble };
+            let pitch = staff_pitch(midi, clef);
+            let step = pitch.step + i16::from(pitch.sharp && self.spelling == Spelling::Flats);
+            let actual_y = staff_bottom(clef) - step as f32 * 5.0 * scale;
+            // Wrong notes can be far outside the song's register. Keep the staff
+            // stationary and identify off-panel pitches with an explicit arrow.
+            let y = actual_y.clamp(staff_top + 7.0 * scale, staff_end - 7.0 * scale);
+            let outside = (y - actual_y).abs() > 0.1;
+            let color = match input.feedback {
+                Some(f) if f.semitones == 0 => [80, 225, 160],
+                Some(_) => [255, 175, 75],
+                None => [100, 195, 255],
+            };
+            if !outside {
+                for ledger in ledger_steps(step) {
+                    quad(
+                        quads,
+                        cursor - 9.0 * scale,
+                        staff_bottom(clef) - ledger as f32 * 5.0 * scale,
+                        18.0 * scale,
+                        scale,
+                        [0.6, 0.63, 0.7, 1.0],
+                    );
+                }
+            }
+            // A ring differs from the score's filled noteheads and remains visible
+            // over the blue cursor, even when the played note is an exact match.
+            draw_ring(quads, cursor, y, scale, color);
+            if pitch.sharp && !outside {
+                self.glyphs.draw(
+                    text,
+                    cursor + 9.0 * scale,
+                    y,
+                    40.0 * scale,
+                    if self.spelling == Spelling::Flats {
+                        '\u{E260}'
+                    } else {
+                        '\u{E262}'
+                    },
+                    color,
+                );
+            }
+            if outside {
+                label(
+                    ui,
+                    cursor - 18.0 * scale,
+                    y - 10.0 * scale,
+                    36.0 * scale,
+                    20.0 * scale,
+                    15.0 * scale,
+                    if actual_y < y { "↑" } else { "↓" }.to_owned(),
+                );
+            }
+            feedback_labels.push(match input.feedback {
+                Some(f) if f.semitones == 0 => format!("{}: hit", pitch_label(midi)),
+                Some(f) => format!(
+                    "{}: {:+} st from {}",
+                    pitch_label(midi),
+                    f.semitones,
+                    pitch_label(f.expected)
+                ),
+                None => format!("{}: no target now", pitch_label(midi)),
+            });
+        }
+        let input_feedback = if feedback_labels.is_empty() {
+            None
+        } else {
+            let extra = feedback_labels.len().saturating_sub(4);
+            feedback_labels.truncate(4);
+            Some(format!(
+                "You: {}{}",
+                feedback_labels.join(" · "),
+                if extra > 0 {
+                    format!(" · +{extra} notes")
+                } else {
+                    String::new()
+                }
+            ))
+        };
         let carried = visible.iter().any(|n| n.start < window.start);
         label(
             ui,
@@ -399,12 +547,14 @@ impl ScoreOverlay {
             panel_width - 10.0,
             20.0 * scale,
             12.0 * scale.min(1.25),
-            if seconds < 0.0 {
+            if let Some(feedback) = input_feedback {
+                feedback
+            } else if seconds < 0.0 {
                 format!("Starts in {:.1}s", -seconds)
             } else if carried {
                 "Held notes from before this window are shown at its left edge.".to_owned()
             } else {
-                "Quarter-note beat grid · green = current notes · thin rails = exact MIDI duration"
+                "Play: ring = your pitch · green = hit · orange = mismatch · blue = no target"
                     .to_owned()
             },
         );
@@ -579,4 +729,27 @@ fn draw_dot(out: &mut QuadRenderer, x: f32, y: f32, scale: f32, color: [u8; 3]) 
         ],
         ..Default::default()
     });
+}
+
+fn draw_ring(out: &mut QuadRenderer, x: f32, y: f32, scale: f32, color: [u8; 3]) {
+    for (radius, color) in [
+        (
+            6.0,
+            [
+                color[0] as f32 / 255.0,
+                color[1] as f32 / 255.0,
+                color[2] as f32 / 255.0,
+                1.0,
+            ],
+        ),
+        (3.0, [0.1, 0.11, 0.14, 1.0]),
+    ] {
+        out.push(neothesia_core::render::QuadInstance {
+            position: [x - radius * scale, y - radius * scale],
+            size: [2.0 * radius * scale; 2],
+            border_radius: [radius * scale; 4],
+            color,
+            ..Default::default()
+        });
+    }
 }

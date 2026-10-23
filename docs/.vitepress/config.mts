@@ -21,6 +21,7 @@ export default defineConfig({
           { text: "Shortcuts", link: "/pages/shortcuts" },
           { text: "MIDI Library", link: "/pages/midi-library" },
           { text: "Arcade", link: "/pages/arcade" },
+          { text: "Formats & roadmap", link: "/plans/formats-and-learning" },
           { text: "Live Chords", link: "/pages/chords" },
           { text: "Customization", link: "/pages/customization" },
           { text: "Branding", link: "/pages/branding" },

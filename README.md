@@ -28,6 +28,7 @@ The upstream Flathub/AUR packages distribute Neothesia, not this Tangent fork.
 
 ## Documentation
 
+- [Formats and learning roadmap (Norwegian)](docs/plans/formats-and-learning.md)
 - [Development blog: Tangent og den første Arcade-modusen](docs/blog/2026-10-23-tangent-arcade.md)
 - [Installation](docs/pages/installation.md)
 - [Video encoding](docs/pages/video-encoding.md)

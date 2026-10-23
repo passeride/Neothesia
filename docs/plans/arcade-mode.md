@@ -33,6 +33,10 @@ Do not release only a decorative HUD around the current play-along statistics.
 
 ## Formats: research and decision
 
+The [formats and learning roadmap](formats-and-learning.md) records the current
+project direction, MIDI limitations and staged MusicXML/manifest support. It
+also distinguishes planned format support from what the app can read today.
+
 User constraint: **Clone Hero is inspiration for game feel only. Do not implement
 its data format or a guitar-chart importer. All supported note data must preserve
 actual piano pitches and arrangements.** The comparison below records research,

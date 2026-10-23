@@ -81,6 +81,8 @@ Ved avvik skal brukeren få vite hvilken kilde som styrer avspilling og poeng. E
 
 ## Prioritert vei videre
 
+Arkitekturgjelden og konkrete ferdigkriterier følges i [TODO.md](https://github.com/passeride/Neothesia/blob/feat/live-chord-recognition/TODO.md). Se også [ADR-ene](../adr/index.md) før musikkmodell, rekordidentitet eller sesjonsgrenser endres.
+
 1. **Trygg tilkobling og timing.** Test Windows og fysisk piano, frakobling/gjentilkobling, pedal og lydruting. Lag en enkel MIDI-/lydveiviser og veiledet kalibrering. MIDI-testdata alene måler ikke faktisk forsinkelse.
 2. **Riktig musikalsk tidsmodell.** Bruk taktart og taktartsskifter i taktmarkeringer. Gjør støtte for SMF-varianter, tempokart og standardverdier eksplisitt. Skill kildefeil fra manglende appstøtte.
 3. **Målrettet øving.** Velg og gjenta et parti med redusert hastighet. Knytt Arcade-resultatet til «øv på dette partiet». Slike forsøk er øving og skal ikke erstatte sammenhengende rekorder.

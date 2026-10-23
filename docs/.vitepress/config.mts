@@ -14,6 +14,7 @@ export default defineConfig({
     ],
 
     sidebar: [
+      { text: "Development", items: [{ text: "Architecture decisions", link: "/adr/" }] },
       {
         text: "How-to",
         items: [

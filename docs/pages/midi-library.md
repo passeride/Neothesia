@@ -2,6 +2,10 @@
 
 The home screen is a folder-backed gallery of your MIDI pieces.
 
+Future Arcade scoring, piano arrangements and cover-art record badges are described
+in the [Arcade implementation plan](../plans/arcade-mode.md). They are planned
+features and are not part of the current library behavior below.
+
 1. Click **Choose folder** and select the folder where you keep your music.
 2. Neothesia saves the folder immediately and lists `.mid` and `.midi` files,
    including upper-case extensions. Subfolders are included by default.

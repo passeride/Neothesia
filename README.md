@@ -57,4 +57,4 @@ correct answer.
 
 Enable **Notes** for live treble/bass staff notation, or **Note practice** to learn
 reading individual notes. Choose treble, bass or both, optional sharps, and hints.
-Single-note exercises require the correct octave.
+Single-note practice continues without a score or ending and requires the correct octave.

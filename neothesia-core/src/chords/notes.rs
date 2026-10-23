@@ -90,10 +90,17 @@ pub struct NoteTarget {
     pub clef: Clef,
 }
 
-pub const ROUND_LENGTH: usize = 20;
+/// Continuous practice keeps only two bounded pitch pools and the current task.
+/// There is no score, completion count, or terminal state.
 pub struct NoteTraining {
-    targets: Vec<NoteTarget>,
-    index: usize,
+    treble: Vec<NoteTarget>,
+    bass: Vec<NoteTarget>,
+    treble_index: usize,
+    bass_index: usize,
+    rng: u64,
+    range: PracticeRange,
+    chromatic: bool,
+    target: NoteTarget,
     phase: Phase,
     matching_for: Duration,
 }
@@ -122,58 +129,69 @@ impl NoteTraining {
         let mut rng = if seed == 0 { 1 } else { seed };
         let treble = shuffled_pool(Clef::Treble, chromatic, &mut rng);
         let bass = shuffled_pool(Clef::Bass, chromatic, &mut rng);
-        let mut targets: Vec<NoteTarget> = Vec::new();
-        let mut treble_i = 0;
-        let mut bass_i = 0;
-        for i in 0..ROUND_LENGTH {
-            let clef = match range {
-                PracticeRange::Treble => Clef::Treble,
-                PracticeRange::Bass => Clef::Bass,
-                PracticeRange::Both => {
-                    if i % 2 == 0 {
-                        Clef::Treble
-                    } else {
-                        Clef::Bass
-                    }
-                }
-            };
-            let (pool, index) = match clef {
-                Clef::Treble => (&treble, &mut treble_i),
-                Clef::Bass => (&bass, &mut bass_i),
-            };
-            // Middle C belongs to both pools. Avoid the same key twice in a row.
-            if targets
-                .last()
-                .is_some_and(|p| p.midi == pool[*index % pool.len()].midi)
-            {
-                *index += 1;
-            }
-            targets.push(pool[*index % pool.len()]);
-            *index += 1;
-        }
-        Self {
-            targets,
-            index: 0,
+        let mut session = Self {
+            treble,
+            bass,
+            treble_index: 0,
+            bass_index: 0,
+            rng,
+            range,
+            chromatic,
+            target: NoteTarget {
+                midi: 60,
+                clef: Clef::Treble,
+            },
             phase: if current_notes.is_empty() {
                 Phase::Playing
             } else {
                 Phase::ReleaseBeforeStart
             },
             matching_for: Duration::ZERO,
+        };
+        session.target = session.next_target(None);
+        session
+    }
+
+    fn next_target(&mut self, previous: Option<NoteTarget>) -> NoteTarget {
+        let clef = match self.range {
+            PracticeRange::Treble => Clef::Treble,
+            PracticeRange::Bass => Clef::Bass,
+            PracticeRange::Both => {
+                if previous.is_some_and(|p| p.clef == Clef::Treble) {
+                    Clef::Bass
+                } else {
+                    Clef::Treble
+                }
+            }
+        };
+        let (pool, index) = match clef {
+            Clef::Treble => (&mut self.treble, &mut self.treble_index),
+            Clef::Bass => (&mut self.bass, &mut self.bass_index),
+        };
+        loop {
+            if *index == pool.len() {
+                *pool = shuffled_pool(clef, self.chromatic, &mut self.rng);
+                *index = 0;
+            }
+            let candidate = pool[*index];
+            *index += 1;
+            // Both staves include middle C: never immediately repeat a key,
+            // including across clef changes and shuffled-pool boundaries.
+            if !previous.is_some_and(|p| p.midi == candidate.midi) {
+                return candidate;
+            }
         }
     }
-    pub fn target(&self) -> Option<NoteTarget> {
-        self.targets.get(self.index).copied()
-    }
-    pub fn completed(&self) -> usize {
-        self.index
+
+    pub fn target(&self) -> NoteTarget {
+        self.target
     }
     pub fn phase(&self) -> Phase {
         self.phase
     }
     pub fn update(&mut self, notes: &[u8], delta: Duration) {
         match self.phase {
-            Phase::Finished => {}
+            Phase::Finished => unreachable!("Continuous note practice never finishes"),
             Phase::ReleaseBeforeStart => {
                 if notes.is_empty() {
                     self.phase = Phase::Playing;
@@ -181,18 +199,14 @@ impl NoteTraining {
             }
             Phase::Correct => {
                 if notes.is_empty() {
-                    self.index += 1;
+                    self.target = self.next_target(Some(self.target));
                     self.matching_for = Duration::ZERO;
-                    self.phase = if self.index == self.targets.len() {
-                        Phase::Finished
-                    } else {
-                        Phase::Playing
-                    };
+                    self.phase = Phase::Playing;
                 }
             }
             Phase::Playing => {
                 // Exact MIDI pitch and exactly one sounding key: octave and extras matter.
-                if notes == [self.target().unwrap().midi] {
+                if notes == [self.target().midi] {
                     self.matching_for = self.matching_for.saturating_add(delta);
                     if self.matching_for >= HOLD_TIME {
                         self.phase = Phase::Correct;
@@ -237,17 +251,27 @@ mod tests {
         assert_eq!(pitch_label(0), "C-1");
     }
     #[test]
-    fn decks_cover_selected_registers_and_balanced_clefs() {
+    fn continuous_sequences_cover_ranges_and_alternate_clefs() {
+        fn sequence(range: PracticeRange, chromatic: bool, seed: u64) -> Vec<NoteTarget> {
+            let mut s = NoteTraining::new(range, chromatic, seed, &[]);
+            let mut targets = Vec::new();
+            for _ in 0..200 {
+                let t = s.target();
+                targets.push(t);
+                s.update(&[t.midi], HOLD_TIME);
+                s.update(&[], Duration::ZERO);
+            }
+            targets
+        }
         for range in [
             PracticeRange::Treble,
             PracticeRange::Bass,
             PracticeRange::Both,
         ] {
-            for seed in 0..100 {
-                let s = NoteTraining::new(range, false, seed, &[]);
-                assert_eq!(s.targets.len(), ROUND_LENGTH);
-                assert!(s.targets.windows(2).all(|p| p[0].midi != p[1].midi));
-                for t in &s.targets {
+            for seed in 0..10 {
+                let targets = sequence(range, false, seed);
+                assert!(targets.windows(2).all(|p| p[0].midi != p[1].midi));
+                for t in &targets {
                     assert!(!staff_pitch(t.midi, t.clef).sharp);
                     assert!(match t.clef {
                         Clef::Treble => (60..=84).contains(&t.midi),
@@ -265,28 +289,19 @@ mod tests {
                     }
                 }
                 if range == PracticeRange::Both {
-                    assert_eq!(
-                        s.targets.iter().filter(|t| t.clef == Clef::Bass).count(),
-                        10
-                    );
+                    assert!(targets.windows(2).all(|p| p[0].clef != p[1].clef));
                 }
             }
         }
-        let a = NoteTraining::new(PracticeRange::Both, true, 42, &[]);
-        assert!(a.targets.iter().any(|t| staff_pitch(t.midi, t.clef).sharp));
-        assert_eq!(
-            a.targets,
-            NoteTraining::new(PracticeRange::Both, true, 42, &[]).targets
-        );
-        assert_ne!(
-            a.targets,
-            NoteTraining::new(PracticeRange::Both, true, 43, &[]).targets
-        );
+        let a = sequence(PracticeRange::Both, true, 42);
+        assert!(a.iter().any(|t| staff_pitch(t.midi, t.clef).sharp));
+        assert_eq!(a, sequence(PracticeRange::Both, true, 42));
+        assert_ne!(a, sequence(PracticeRange::Both, true, 43));
     }
     #[test]
     fn exact_octave_extras_and_hold_reset() {
         let mut s = NoteTraining::new(PracticeRange::Treble, false, 1, &[]);
-        let n = s.target().unwrap().midi;
+        let n = s.target().midi;
         for wrong in [vec![n - 12], vec![n, n + 1], vec![]] {
             s.update(&[n], Duration::from_millis(200));
             s.update(&wrong, HOLD_TIME);
@@ -297,30 +312,30 @@ mod tests {
         s.update(&[n], HOLD_TIME);
         assert_eq!(s.phase(), Phase::Correct);
         s.update(&[n], HOLD_TIME);
-        assert_eq!(s.completed(), 0);
+        assert_eq!(s.target().midi, n);
         s.update(&[], Duration::ZERO);
-        assert_eq!(s.completed(), 1);
+        assert_ne!(s.target().midi, n);
+        assert_eq!(s.phase(), Phase::Playing);
     }
     #[test]
-    fn release_gating_completion_and_restart() {
+    fn practice_continues_past_the_old_limit_and_keeps_bounded_state() {
         let mut s = NoteTraining::new(PracticeRange::Bass, true, 3, &[60]);
-        let n = s.target().unwrap().midi;
+        let n = s.target().midi;
         s.update(&[n], HOLD_TIME);
         assert_eq!(s.phase(), Phase::ReleaseBeforeStart);
         s.update(&[], Duration::ZERO);
-        for _ in 0..ROUND_LENGTH {
-            let n = s.target().unwrap().midi;
+        for _ in 0..1000 {
+            let n = s.target().midi;
             s.update(&[n], HOLD_TIME);
             assert_eq!(s.phase(), Phase::Correct);
             s.update(&[], Duration::ZERO);
+            assert_eq!(s.phase(), Phase::Playing);
+            assert_ne!(s.target().midi, n);
+            assert!(s.treble.len() <= 25 && s.bass.len() <= 25);
         }
-        assert_eq!(s.phase(), Phase::Finished);
-        assert!(s.target().is_none());
-        s.update(&[60], HOLD_TIME);
-        assert_eq!(s.completed(), ROUND_LENGTH);
         assert_eq!(
-            NoteTraining::new(PracticeRange::Bass, false, 4, &[]).completed(),
-            0
+            NoteTraining::new(PracticeRange::Bass, false, 4, &[]).phase(),
+            Phase::Playing
         );
     }
 }

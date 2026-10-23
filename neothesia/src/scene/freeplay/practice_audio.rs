@@ -81,16 +81,14 @@ impl Drop for PracticeAudio {
 impl FreeplayScene {
     fn practice_prompt(&self) -> Option<(Prompt, Phase)> {
         if let Some(s) = &self.note_practice.session {
-            s.target().map(|t| {
-                (
-                    Prompt {
-                        kind: 0,
-                        index: s.completed(),
-                        notes: vec![t.midi],
-                    },
-                    s.phase(),
-                )
-            })
+            Some((
+                Prompt {
+                    kind: 0,
+                    index: 0,
+                    notes: vec![s.target().midi],
+                },
+                s.phase(),
+            ))
         } else if let Some(s) = &self.training {
             s.exercise().map(|e| {
                 (

@@ -2,9 +2,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use neothesia_core::{
     chords::{
-        notes::{
-            Clef, NoteTraining, PracticeRange, ROUND_LENGTH, ledger_steps, pitch_label, staff_pitch,
-        },
+        notes::{Clef, NoteTraining, PracticeRange, ledger_steps, pitch_label, staff_pitch},
         training::Phase,
     },
     render::{QuadInstance, QuadRenderer, TextRenderer},
@@ -250,25 +248,13 @@ impl FreeplayScene {
         let scale = (available / 280.0).min(requested_scale);
         // Enlarge notation without letting headings/feedback overwhelm the staff.
         let text_scale = scale.min(1.25);
-        let target = practice.session.as_ref().and_then(|s| s.target());
+        let target = practice.session.as_ref().map(|s| s.target());
         let correct = practice
             .session
             .as_ref()
             .is_some_and(|s| s.phase() == Phase::Correct);
         let mut heading = if let Some(s) = &practice.session {
-            if let Some(t) = target {
-                format!(
-                    "Note {} / {} - {}",
-                    s.completed() + 1,
-                    ROUND_LENGTH,
-                    t.clef.label()
-                )
-            } else {
-                format!(
-                    "Complete! {} / {} notes - restart to practice again.",
-                    ROUND_LENGTH, ROUND_LENGTH
-                )
-            }
+            format!("Note practice - {}", s.target().clef.label())
         } else {
             "Live notes - treble (G) and bass (F)".to_owned()
         };

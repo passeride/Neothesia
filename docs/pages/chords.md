@@ -166,17 +166,18 @@ Training uses the exercise's clef for the correctly played target, including
 middle C written above the bass staff.
 
 - Click the range control to cycle **Both clefs → Treble → Bass → Both clefs**.
-  Treble covers C4–C6, bass covers C2–C4. Both alternates clefs, ten tasks each.
-- Each round has **20 shuffled tasks** with no consecutive repeated MIDI pitch.
-  Restart creates a fresh sequence. Range/accidental changes restart the round.
+  Treble covers C4–C6, bass covers C2–C4. Both alternates clefs continuously.
+- Practice continues indefinitely with **no score, task counter, or ending**.
+  Pitch pools reshuffle as they are exhausted, with no consecutive repeated MIDI
+  pitch. Restart or range/accidental changes start a fresh continuous sequence.
 - Start with **Sharps: Off** (white keys); enable it to add black keys with explicit
   sharp signs. There are no flat-reading exercises in this first version.
 - Play exactly the shown MIDI pitch, in the correct octave, without extra notes,
   and hold it for 300 ms. This differs from chord training's octave-independent
   matching. Wrong notes and extras reset the hold timer.
 - Release keys and sustained notes after success to advance. Starting/restarting
-  while notes are sounding first asks you to release them. Completion remains
-  visible until restart or exit. Progress is not saved across sessions.
+  while notes are sounding first asks you to release them. Turn Note practice
+  off whenever you want to stop; there is no completion screen or saved score.
 - Chord training and note practice are mutually exclusive. Switching either on
   ends the other exercise mode. Live Chords/Notes displays remain independent.
   Recorded preview playback never answers an exercise.
@@ -192,12 +193,13 @@ Additional physical/UI smoke test:
 2. Play C4, F#4 and C2 separately. Check middle C on its ledger line below the
    treble staff, F# in the first treble space with a sharp sign, and low C on the
    second ledger line below the bass staff.
-3. Enable Note practice. Expect a gold target, clef/progress, no target name and
+3. Enable Note practice. Expect a gold target and clef, no progress counter, no target name and
    no target-key marker with Hint off. Hint on must reveal name/octave and marker.
 4. Try the right letter in the wrong octave, or the right note plus another key.
    Neither may pass. The exact pitch held for 300 ms must turn green and reveal
    its name; it must wait for release before advancing.
-5. Check Treble, Bass and Both, natural-only and sharps, restart and completion.
+5. Check Treble, Bass and Both, natural-only and sharps, and restart. Continue
+   beyond 20 answers and verify there is no completion screen or counter.
    Middle C in a bass exercise must remain on the bass ledger line when matched.
 6. Start note practice while holding keys/pedal, then switch to chord training
    and back. Check release prompts, exclusive exercise modes and the independent
@@ -205,8 +207,8 @@ Additional physical/UI smoke test:
 
 Four additional automated tests verify reference staff positions/ledger lines,
 sharp spelling, exact pitch/extra-note rejection and hold reset, selected ranges,
-balanced mixed rounds, deterministic seeded shuffling with no immediate repeats,
-release gating, full-round completion and restart. The notation geometry was
+alternating mixed clefs, deterministic seeded shuffling with no immediate repeats,
+release gating, and 1,000 continuous answers with bounded memory. The notation geometry was
 also visually inspected with the bundled Leland music font; desktop GUI and
 physical MIDI verification remain pending.
 
@@ -239,7 +241,8 @@ On, each new unanswered task plays once through the selected output: the exact
 note/octave in note practice, or the displayed chord voicing played together.
 **Replay task** plays that same task again without changing progress. Playback
 lasts 800 ms at MIDI velocity 80. It begins only after the initial release prompt
-has cleared. Finished rounds do not play another task. Turning sound off,
+has cleared. Note practice plays every new target indefinitely; completed chord
+sequences do not play another task. Turning sound off,
 restarting, changing exercise modes, or leaving Free Play cancels active reference
 notes; replays stop the preceding reference first.
 

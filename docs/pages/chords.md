@@ -104,3 +104,44 @@ Physical/UI smoke test (requires a build from this branch):
    and preview notes alone do not appear in the live chord display.
 
 Physical MIDI and visual GUI verification must be performed on a desktop with a piano.
+
+## Chord training
+
+In Free Play, enable **Training: Off/On** next to the chord-display switch.
+The current task shows its chord name, suggested notes with octave numbers
+(C4 is middle C), and progress through 20 exercises. Gold markers just above
+the keyboard identify the suggested voicing; they turn green when correct.
+The notes are displayed in root position, but answers accept any octave,
+inversion, or octave doubling. Every target pitch class must be present and
+no additional pitch classes may sound. Recognition ranking/alternative names
+do not affect answer validation.
+
+Hold the correct set for 300 ms. The view displays **Correct!**, then waits until
+all keys and sustained notes are released before moving to the next task.
+If keys are already sounding when starting/restarting, release them first.
+Wrong, incomplete, or extra notes reset the hold timer without skipping tasks.
+After the last chord, the completion screen remains until you restart or exit.
+**Restart** begins again at C; turning training off returns to ordinary Free Play.
+The chord-display switch works independently. Training only evaluates live input,
+not recording-preview playback; pause a preview if it is distracting.
+
+The curated beginner sequence is C, F, G, Am, Dm, Em, D, A, E, Bm, Bb, Eb,
+G7, D7, A7, E7, Cmaj7, Am7, Dm7, Fmaj7. This is a practical selection of
+common chords rather than a statistical frequency ranking. Progress is kept for
+the current session; there is no score history or randomization yet.
+
+Additional physical/UI smoke test:
+
+1. Enable Training with all notes released. Expect `Chord 1 / 20: C`,
+   `C4 - E4 - G4`, and three gold keyboard markers.
+2. Play C-E only, C-Eb-G, or C-E-G-A. None must advance the exercise.
+3. Play E-G-C in any octave for 300 ms. Expect **Correct!** and green markers.
+4. Keep a note or sustain held. The task must stay on C; release all notes/pedal
+   and expect F with its new note names/markers.
+5. Restart while notes sound. Expect a release prompt, followed by the first task.
+6. Complete the series; expect `20 / 20` and a restart option. Toggle Training off
+   and verify ordinary Free Play and the independent Chords switch still work.
+
+Six automated training tests cover hold timing, accepted inversions/doubles,
+wrong/extra/incomplete notes, initial release, sustained-note release gating,
+full-series completion/restart, and displayed note spelling.

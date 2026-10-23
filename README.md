@@ -50,3 +50,7 @@ All binary releases:
 Enable **Chords** in Free Play to identify played MIDI chords, inversions, and
 alternative interpretations. See [chord recognition](docs/pages/chords.md) for
 the API, supported vocabulary, sustain behavior, and verification steps.
+
+Enable **Training** beside the Chords switch to practice 20 common chords with
+chord names, note names, keyboard markers, and automatic progression after a
+correct answer.

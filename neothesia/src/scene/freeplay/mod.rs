@@ -21,6 +21,7 @@ use crate::{
 };
 
 mod recorder;
+mod training;
 
 type MsgFn = Box<dyn FnOnce(&mut FreeplayScene, &mut Context)>;
 
@@ -53,6 +54,7 @@ pub struct FreeplayScene {
     nuon: nuon::Ui,
     mouse_to_midi_state: MouseToMidiEventState,
     show_chords: bool,
+    training: Option<chords::training::TrainingSession>,
     live_notes: LiveNotes,
     chord_text: String,
 
@@ -102,6 +104,7 @@ impl FreeplayScene {
             nuon: nuon::Ui::new(),
             mouse_to_midi_state: MouseToMidiEventState::default(),
             show_chords: false,
+            training: None,
             live_notes: LiveNotes::default(),
             chord_text: String::new(),
             recorder: FreeplayRecorder::default(),
@@ -166,6 +169,7 @@ impl FreeplayScene {
             self.show_chords = !self.show_chords;
             self.update_chord_text();
         }
+        self.update_training_ui(ctx);
         if !self.show_chords {
             return;
         }
@@ -248,6 +252,9 @@ impl Scene for FreeplayScene {
         self.quad_renderer_fg.clear();
 
         self.dispatch_futures(ctx);
+        if let Some(session) = &mut self.training {
+            session.update(&self.live_notes.notes(), delta);
+        }
 
         if let Some(preview) = self.preview.as_mut() {
             preview.update(&mut self.keyboard, ctx, delta);

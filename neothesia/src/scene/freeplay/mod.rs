@@ -21,6 +21,7 @@ use crate::{
 };
 
 mod notes;
+mod practice_audio;
 mod recorder;
 mod training;
 
@@ -55,6 +56,7 @@ pub struct FreeplayScene {
     nuon: nuon::Ui,
     mouse_to_midi_state: MouseToMidiEventState,
     show_chords: bool,
+    practice_audio: practice_audio::PracticeAudio,
     note_practice: notes::NotePractice,
     training: Option<chords::training::TrainingSession>,
     live_notes: LiveNotes,
@@ -106,6 +108,7 @@ impl FreeplayScene {
             nuon: nuon::Ui::new(),
             mouse_to_midi_state: MouseToMidiEventState::default(),
             show_chords: false,
+            practice_audio: practice_audio::PracticeAudio::default(),
             note_practice: notes::NotePractice::default(),
             training: None,
             live_notes: LiveNotes::default(),
@@ -174,6 +177,7 @@ impl FreeplayScene {
         }
         self.update_training_ui(ctx);
         self.update_note_controls(ctx);
+        self.update_practice_audio_controls(ctx);
         if !self.show_chords {
             return;
         }
@@ -262,6 +266,8 @@ impl Scene for FreeplayScene {
         if let Some(session) = &mut self.training {
             session.update(&self.live_notes.notes(), delta);
         }
+
+        self.update_practice_audio(ctx, delta);
 
         if let Some(preview) = self.preview.as_mut() {
             preview.update(&mut self.keyboard, ctx, delta);

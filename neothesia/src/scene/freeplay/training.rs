@@ -23,6 +23,7 @@ impl FreeplayScene {
             .border_radius([5.0; 4])
             .build(&mut self.nuon)
         {
+            self.practice_audio.reset();
             self.training = if self.training.is_some() {
                 None
             } else {
@@ -43,6 +44,7 @@ impl FreeplayScene {
             .border_radius([5.0; 4])
             .build(&mut self.nuon)
         {
+            self.practice_audio.reset();
             self.training = Some(TrainingSession::new(&self.live_notes.notes()));
         }
 

@@ -230,3 +230,38 @@ Desktop check: try 100%, 150%, and 250% in live Notes and Note practice; verify
 that staff spacing and symbols enlarge together, notes stay on their correct
 lines, and progress survives size changes. Resize the window at high zoom and
 check the fitted-size indication and that notes stay above the keyboard.
+
+## Optional reference sound / ear practice
+
+Both **Training** and **Note practice** offer **Hear task: Off/On**. It defaults
+to Off and applies to both trainers for the current Free Play session. With it
+On, each new unanswered task plays once through the selected output: the exact
+note/octave in note practice, or the displayed chord voicing played together.
+**Replay task** plays that same task again without changing progress. Playback
+lasts 800 ms at MIDI velocity 80. It begins only after the initial release prompt
+has cleared. Finished rounds do not play another task. Turning sound off,
+restarting, changing exercise modes, or leaving Free Play cancels active reference
+notes; replays stop the preceding reference first.
+
+Select the built-in synth (with a SoundFont) or a MIDI output in the menu.
+`Hear task: No out` means No Output is currently selected. External MIDI devices
+must receive channel 16: that channel is used for reference piano notes, with
+sustain off, separately from the usual channel-1 live echo. Avoid using channel
+16 for simultaneous live input while reference playback is enabled. Volume uses
+the selected output's existing controls. Reference messages go directly to
+output, not to input state, recordings, keyboard markers, or answer evaluation.
+A hardware MIDI-thru loop that feeds output back as input must be disabled for
+correct exercise validation.
+
+For ear practice, leave note-reading hints off and listen/replay before answering.
+Chord training still displays the chord name/notes; this option does not add an
+audio-only quiz or hide its existing visual hints.
+
+Physical check: with the option Off, advance tasks and verify no reference sound.
+Enable it and expect one short example on the current unanswered task, then one
+per subsequent task. Replay several times; progress must not move and no notes
+may remain sounding. Check note and chord modes, restart, mode switching, sound
+off, and leaving Free Play during playback. Repeat through the synth and the
+intended MIDI output. Only your played input should answer tasks or be recorded.
+Two automated reference-playback tests verify note/chord deadlines, one-time
+NoteOff, replay cancellation, deduplication and invalid-note filtering.

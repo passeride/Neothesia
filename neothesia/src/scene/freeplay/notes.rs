@@ -34,7 +34,7 @@ impl Default for NotePractice {
     }
 }
 
-fn control_pos(width: f32, index: usize, y: f32) -> (f32, f32) {
+pub(super) fn control_pos(width: f32, index: usize, y: f32) -> (f32, f32) {
     let columns = ((width - 20.0) / 140.0).floor().max(1.0) as usize;
     (
         10.0 + (index % columns) as f32 * 140.0,
@@ -65,6 +65,7 @@ fn toggle(
 
 impl FreeplayScene {
     fn restart_note_training(&mut self) {
+        self.practice_audio.reset();
         let seed = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map(|d| d.as_nanos() as u64)
@@ -80,14 +81,24 @@ impl FreeplayScene {
 
     pub(super) fn note_controls_bottom(&self, ctx: &Context) -> f32 {
         let base = if self.preview.is_some() { 125.0 } else { 80.0 };
-        let last = if self.note_practice.session.is_some() {
-            6
-        } else if self.note_practice.show_notes {
-            2
-        } else {
-            1
-        };
+        let count = self.note_control_count()
+            + if self.training.is_some() || self.note_practice.session.is_some() {
+                2
+            } else {
+                0
+            };
+        let last = count - 1;
         control_pos(ctx.window_state.logical_size.width, last, base).1 + 40.0
+    }
+
+    pub(super) fn note_control_count(&self) -> usize {
+        if self.note_practice.session.is_some() {
+            7
+        } else if self.note_practice.show_notes {
+            3
+        } else {
+            2
+        }
     }
 
     pub(super) fn update_note_controls(&mut self, ctx: &Context) {

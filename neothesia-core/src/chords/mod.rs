@@ -1,6 +1,7 @@
 //! Context-free, equal-tempered chord recognition. MIDI supplies pitch, not spelling
 //! or harmonic intent, so candidates are ranked hypotheses rather than probabilities.
 
+pub mod audition;
 pub mod live;
 pub mod notes;
 pub mod training;

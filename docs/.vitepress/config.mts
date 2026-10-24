@@ -14,7 +14,7 @@ export default defineConfig({
     ],
 
     sidebar: [
-      { text: "Development", items: [{ text: "Architecture decisions", link: "/adr/" }] },
+      { text: "Development", items: [{ text: "Architecture decisions", link: "/adr/" }, { text: "Bevy / clean room plan", link: "/plans/bevy-clean-room" }, { text: "Bevy libraries", link: "/plans/bevy-libraries" }] },
       {
         text: "How-to",
         items: [

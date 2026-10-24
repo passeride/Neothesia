@@ -116,3 +116,22 @@ Behold dagens lokale rekordlagring inntil et konkret skalerings-/søkeproblem
 begrunner noe annet. Database, pluginrammeverk og total omskriving er ikke del av
 runden. Fysisk piano, pedal, forsinkelse og Windows-GUI trenger fortsatt egen
 verifikasjon; en refaktorering gjør ikke disse punktene automatisk ferdige.
+
+## Eget spor: ny Bevy-/web-implementasjon (CR-00–07)
+
+Planlagt 24. oktober 2026. Se [planen](docs/plans/bevy-clean-room.md),
+[bibliotekvurderingen](docs/plans/bevy-libraries.md) og
+[ADR-0004](docs/adr/0004-bevy-clean-room-track.md). Dette erstatter ikke ARCH-oppgavene
+for forken og er ikke en bekreftelse på at clean room-prosessen er gjennomført.
+
+- [ ] CR-00: gjennomgått kravoverlevering, dokumentert eksponering, rettigheter og nytt repo.
+- [ ] CR-01: mål Bevy/WASM, MIDI, lyd og lagring på en HTTPS-prototype.
+- [ ] CR-02: selvstendig MIDI-import og pianoavspilling på web/Windows.
+- [ ] CR-03: Free Play, akkordtolkning og note-/akkordøving.
+- [ ] CR-04: vedvarende bibliotek, tema, innstillinger og import/eksport.
+- [ ] CR-05: selvstendig spesifisert Arcade, kalibrering og rekorder.
+- [ ] CR-06: MusicXML/MXL og synkronisert noteark med eksplisitt støttekontrakt.
+- [ ] CR-07: plattformtest, ytelse, deploy og proveniens-/lisensgjennomgang.
+
+Ferdigkriterier står i planen. Ingen implementeringsfiler eller assets fra forken
+skal flyttes som en snarvei. Dette dokumentet bestiller ikke en ny app-deploy.

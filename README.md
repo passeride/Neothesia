@@ -28,6 +28,8 @@ The upstream Flathub/AUR packages distribute Neothesia, not this Tangent fork.
 
 ## Documentation
 
+- [New Bevy/web implementation plan (Norwegian)](docs/plans/bevy-clean-room.md) and [library assessment](docs/plans/bevy-libraries.md) — planning only; this repository remains the Neothesia-derived Tangent fork.
+
 - [Technical debt and refactoring tasks](TODO.md)
 - [Architecture decisions](docs/adr/index.md)
 

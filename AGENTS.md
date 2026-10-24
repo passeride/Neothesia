@@ -73,3 +73,20 @@ Mark planned versus delivered behavior clearly. Preserve original input files;
 import must not rewrite scores. Maintain bounded XML/archive loading and avoid
 external entity/network resolution. Add distributable, attributed fixtures for
 new musical semantics and keep them independent of local devices and paths.
+
+## Separate Bevy/web planning track
+
+Read `docs/adr/0004-bevy-clean-room-track.md` and
+`docs/plans/bevy-clean-room.md` for this track. It is a new-project plan, not an
+engine refactor or relicensing of this repository. Keep the fork's LICENSE and
+attribution. Do not transplant local crates, implementation code, tests or assets
+into the planned implementation. Independently licensed published libraries need
+their own provenance and compatibility assessment.
+
+The current planning conversation has prior fork-source exposure. Do not claim
+source independence just because an implementation is written from scratch or
+started in a fresh agent context. Treat existing plans/ADRs as management material;
+a clean room implementer receives only a separately reviewed, rights-cleared
+requirements package and approved references. Document any exposure honestly.
+This process requirement is specific to the requested clean room track, not an
+extra approval gate for ordinary fork maintenance or planning work.

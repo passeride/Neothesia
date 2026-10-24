@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.passeride.Tangent</id>
+  <launchable type="desktop-id">io.github.passeride.Tangent.desktop</launchable>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+
+  <content_rating type="oars-1.1" />
+
+  <url type="homepage">https://github.com/passeride/Neothesia</url>
+  <url type="bugtracker">https://github.com/passeride/Neothesia/issues</url>
+
+  <name>Tangent</name>
+  <summary>GPU accelerated midi visualizer</summary>
+  <description>
+    <p>Tangent is a simple software that helps you to learn how to play on the piano.</p>
+    <p>For more info visit https://github.com/passeride/Neothesia</p>
+  </description>
+
+</component>

@@ -65,6 +65,30 @@ impl TempoTrack {
         }
     }
 
+    /// Invert the piecewise tempo map for a player timestamp. Quarter-note
+    /// position remains continuous across tempo changes and independent of speed.
+    pub fn seconds_to_quarters(&self, seconds: f64) -> f64 {
+        if !seconds.is_finite() {
+            return 0.0;
+        }
+        let index = self
+            .events
+            .partition_point(|e| e.timestamp.as_secs_f64() <= seconds);
+        if let Some(event) = index.checked_sub(1).and_then(|i| self.events.get(i)) {
+            event.absolute_pulses as f64 / f64::from(self.pulses_per_quarter_note)
+                + (seconds - event.timestamp.as_secs_f64()) * 1_000_000.0
+                    / f64::from(event.tempo.max(1))
+        } else {
+            let initial = self
+                .events
+                .first()
+                .filter(|e| e.absolute_pulses == 0)
+                .map(|e| e.tempo)
+                .unwrap_or(500_000);
+            seconds * 1_000_000.0 / f64::from(initial.max(1))
+        }
+    }
+
     pub fn tempo_event_for_pulses(&self, pulses: u64) -> Option<&TempoEvent> {
         let res = self
             .events
@@ -100,4 +124,43 @@ fn pulse_to_duration(pulses: u64, tempo: u32, pulses_per_quarter_note: u16) -> D
     // so if we want to test for timing regresions we have to do the same
     let time = (u_time * tempo as f64).floor() as u64;
     Duration::from_micros(time)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn inverse_map_handles_default_initial_and_later_tempos() {
+        let default = TempoTrack::build(&[], 480);
+        assert_eq!(default.seconds_to_quarters(1.0), 2.0);
+        let events = vec![vec![
+            TrackEvent {
+                delta: 0.into(),
+                kind: TrackEventKind::Meta(MetaMessage::Tempo(1_000_000.into())),
+            },
+            TrackEvent {
+                delta: 960.into(),
+                kind: TrackEventKind::Meta(MetaMessage::Tempo(500_000.into())),
+            },
+        ]];
+        let map = TempoTrack::build(&events, 480);
+        for (seconds, beats) in [
+            (-1.0, -1.0),
+            (0.0, 0.0),
+            (1.0, 1.0),
+            (2.0, 2.0),
+            (2.5, 3.0),
+            (3.0, 4.0),
+        ] {
+            assert_eq!(map.seconds_to_quarters(seconds), beats);
+        }
+        for pulses in [0, 240, 480, 959, 960, 1200, 1920] {
+            assert!(
+                (map.seconds_to_quarters(map.pulses_to_duration(pulses).as_secs_f64())
+                    - pulses as f64 / 480.0)
+                    .abs()
+                    < 0.00001
+            );
+        }
+    }
 }

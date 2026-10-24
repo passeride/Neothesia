@@ -1,5 +1,5 @@
 {
-  nixConfig.bash-prompt-prefix = "(neothesia) ";
+  nixConfig.bash-prompt-prefix = "(tangent) ";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
@@ -32,7 +32,7 @@
       in
         f pkgs.stdenv.hostPlatform.system pkgs);
 
-    meta = (inputs.nixpkgs.lib.importTOML ./neothesia/Cargo.toml).package;
+    meta = (inputs.nixpkgs.lib.importTOML ./tangent/Cargo.toml).package;
 
     workspace = inputs.nixpkgs.lib.cleanSourceWith {
       name = "${meta.name}-${meta.version}-src";
@@ -65,28 +65,28 @@
         clippy = rustToolchain;
       };
     in {
-      # `nix run github:PolyMeilex/Neothesia`
-      default = inputs.self.outputs.packages.${system}.neothesia;
-      neothesia = naersk.buildPackage {
+      # `nix run github:PolyMeilex/Tangent`
+      default = inputs.self.outputs.packages.${system}.tangent;
+      tangent = naersk.buildPackage {
         nativeBuildInputs = [
           pkgs.pkg-config
         ];
         buildInputs = [
           pkgs.alsa-lib
         ];
-        meta.mainProgram = "neothesia";
+        meta.mainProgram = "tangent";
         src = workspace;
       };
 
-      # `nix run github:PolyMeilex/Neothesia#cli`
+      # `nix run github:PolyMeilex/Tangent#cli`
       cli = naersk.buildPackage {
-        cargoBuildOptions = prev: prev ++ ["--package" "neothesia-cli"];
+        cargoBuildOptions = prev: prev ++ ["--package" "tangent-cli"];
         nativeBuildInputs = [
           pkgs.pkg-config
           pkgs.ffmpeg_8.dev
         ];
         buildInputs = [pkgs.ffmpeg_8.lib];
-        meta.mainProgram = "neothesia-cli";
+        meta.mainProgram = "tangent-cli";
         src = workspace;
       };
     });
@@ -109,7 +109,7 @@
         ffmpeg_8.lib
       ];
     in {
-      # `nix develop github:PolyMeilex/Neothesia`
+      # `nix develop github:PolyMeilex/Tangent`
       default = pkgs.mkShell {
         nativeBuildInputs = with pkgs; [
           rustToolchain

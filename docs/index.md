@@ -3,12 +3,12 @@
 layout: home
 
 hero:
-  name: "Neothesia"
-  text: "Flashy MIDI Visualizer"
+  name: "Tangent"
+  text: "Find your next note"
   tagline: Free and open source
   image:
-    src: neothesia-icon.png
-    alt: Neothesia Logo
+    src: /tangent-icon.svg
+    alt: Tangent Logo
   actions:
     - theme: brand
       text: Download
@@ -31,15 +31,11 @@ features:
 
 ##
 
-Neothesia is a cross-platform MIDI visualizer.
+Tangent is a cross-platform MIDI visualizer.
 It helps people to quickly learn how to play piano.
 It takes music notes from a MIDI file as an input and displays them as colorful falling blocks on a virtual piano.
 
-If you have any questions, feel free to join my Discord
-
-[<img alt="Discord" src="https://img.shields.io/discord/273176778946641920?logo=discord&style=for-the-badge&color=%23a051ee">](https://discord.gg/sgeZuVA)
-
-## Screenshots
+## Upstream screenshots (before Tangent branding)
 
 ![image](https://github.com/PolyMeilex/Neothesia/assets/20758186/65483bab-0b74-4fd4-90b1-fdd00508b676)
 

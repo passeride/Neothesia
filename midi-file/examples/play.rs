@@ -10,7 +10,7 @@ fn connect_midi_out() -> MidiOutputConnection {
     let out_port: MidiOutputPort = match out_ports.len() {
         0 => panic!("MidiOut not found"),
         1 => {
-            println!("Choosing the only available output port: {}", &out_ports[0]);
+            println!("Choosing the only available output port: {}", out_ports[0]);
             out_ports.remove(0)
         }
         _ => {

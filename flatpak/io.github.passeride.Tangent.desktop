@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+
+Name=Tangent
+Comment=Midi visualizer
+Categories=Game;Music;
+Icon=io.github.passeride.Tangent
+
+Exec=tangent
+Terminal=false
+StartupNotify=false

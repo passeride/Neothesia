@@ -8,6 +8,23 @@ on:
   workflow_dispatch:
 
 jobs:
+  chord_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Test chord recognition, note reading, training, and live MIDI state
+        shell: bash
+        run: |
+          rustc --edition=2024 --test tangent-core/src/chords/mod.rs -o /tmp/chord-tests
+          /tmp/chord-tests
+          rustc --edition=2024 --test tangent-core/src/score.rs -o /tmp/score-tests
+          /tmp/score-tests
+          rustc --edition=2024 --test tangent-core/src/midi_library.rs -o /tmp/library-tests
+          /tmp/library-tests
+          rustc --edition=2024 --test tangent-core/src/arcade.rs -o /tmp/arcade-tests
+          /tmp/arcade-tests
+
   lints:
     runs-on: ubuntu-latest
     steps:
@@ -15,6 +32,15 @@ jobs:
       - name: Install alsa
         shell: bash
         run: sudo apt update && sudo apt install libasound2-dev libavcodec-dev libavformat-dev libswscale-dev nasm
+      - name: Test core behavior and saved appearance preferences
+        shell: bash
+        run: cargo test -p tangent-core --lib --locked
+      - name: Test Arcade integration, records and UI input edges
+        shell: bash
+        run: cargo test -p tangent --bin tangent -p nuon --lib --locked
+      - name: Test MIDI tempo timeline and MusicXML import
+        shell: bash
+        run: cargo test -p midi-file --lib --tests --locked
       - name: Fmt
         shell: bash
         run: cargo fmt --check
@@ -47,7 +73,7 @@ jobs:
       - id: Build
         uses: ./.github/actions/windows
       - name: ls
-        run: ls -l target/release/neothesia.exe
+        run: ls -l target/release/tangent.exe
 
   build_windows_recorder:
     runs-on: windows-latest
@@ -60,7 +86,7 @@ jobs:
       - id: Build
         uses: ./.github/actions/windows-recorder
       - name: ls
-        run: ls -l target/release/neothesia-cli.exe
+        run: ls -l target/release/tangent-cli.exe
 
   build_macos:
     runs-on: macos-latest

@@ -1,0 +1,43 @@
+{
+  "app-id": "io.github.passeride.Tangent",
+  "runtime": "org.freedesktop.Platform",
+  "runtime-version": "26.08",
+  "sdk": "org.freedesktop.Sdk",
+  "sdk-extensions": [
+    "org.freedesktop.Sdk.Extension.rust-stable"
+  ],
+  "command": "tangent",
+  "finish-args": [
+    "--share=ipc",
+    "--socket=fallback-x11",
+    "--socket=wayland",
+    "--socket=pulseaudio",
+    "--device=dri"
+  ],
+  "build-options": {
+    "append-path": "/usr/lib/sdk/rust-stable/bin",
+    "env": {
+      "CARGO_HOME": "/run/build/tangent/cargo"
+    }
+  },
+  "modules": [
+    {
+      "name": "tangent",
+      "buildsystem": "simple",
+      "build-commands": [
+        "cargo build --release --locked",
+        "cp -ap ./default.sf2 /app/share/tangent/default.sf2",
+        "install -Dm755 ./target/release/tangent -t /app/bin/",
+        "install -Dm644 ./flatpak/io.github.passeride.Tangent.metainfo.xml -t /app/share/metainfo/",
+        "install -Dm644 ./flatpak/io.github.passeride.Tangent.desktop -t /app/share/applications/",
+        "install -Dm644 ./flatpak/io.github.passeride.Tangent.png -t /app/share/icons/hicolor/256x256/apps/"
+      ],
+      "sources": [
+        {
+          "type": "dir",
+          "path": ".."
+        }
+      ]
+    }
+  ]
+}
